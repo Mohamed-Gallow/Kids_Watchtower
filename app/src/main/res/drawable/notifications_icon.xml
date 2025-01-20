@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<item android:state_checked="true" android:drawable="@drawable/baseline_notifications_24" android:color="@color/blueGreen"/>
+<item android:state_checked="false" android:drawable="@drawable/baseline_notifications_24" android:color="@color/unchecked_bottom_nav_color"/>
+
+</selector>
