@@ -236,6 +236,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/screenTimeLayer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -250,10 +251,7 @@
                     android:backgroundTint="@color/white"
                     android:layout_marginStart="30dp"
                     android:src="@drawable/add_user"
-                    android:tint="@color/gray"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/homeSpinner"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:tint="@color/gray" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -275,12 +273,68 @@
                     android:backgroundTint="@color/white"
                     android:src="@drawable/add_user"
                     android:layout_marginEnd="30dp"
-                    android:tint="@color/gray"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/homeSpinner"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:tint="@color/gray" />
             </LinearLayout>
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/recent_activities_layout"
+                android:elevation="7dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/screenTimeLayer">
+
+                <LinearLayout
+                    android:id="@+id/textRecentActivityLayer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="30dp"
+                        android:layout_weight="1"
+                        android:text="Recent Activities"
+                        android:textColor="@color/lightBlack"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="30dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="All Activity"
+                            android:textColor="@color/blueGreen"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                        <View
+                            android:background="@color/blueGreen"
+                            android:layout_width="match_parent"
+                            android:translationY="-2dp"
+                            android:layout_height="1dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="47dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:listitem="@layout/home_recent_item"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
