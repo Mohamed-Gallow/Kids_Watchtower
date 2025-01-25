@@ -1,6 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/auth_nav_graph">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_nav_graph"
+    app:startDestination="@id/loginFragment">
 
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.gomahrepoproject.LoginFragment"
+        android:label="fragment_login"
+        tools:layout="@layout/fragment_login" >
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.example.gomahrepoproject.RegisterFragment"
+        android:label="fragment_register"
+        tools:layout="@layout/fragment_register" >
+        <action
+            android:id="@+id/action_registerFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/personTypeFragment"
+        android:name="com.example.gomahrepoproject.PersonTypeFragment"
+        android:label="fragment_person_type"
+        tools:layout="@layout/fragment_person_type" >
+        <action
+            android:id="@+id/action_personTypeFragment_to_opreationFragment"
+            app:destination="@id/opreationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/opreationFragment"
+        android:name="com.example.gomahrepoproject.OpreationFragment"
+        android:label="fragment_opreation"
+        tools:layout="@layout/fragment_opreation" >
+        <action
+            android:id="@+id/action_opreationFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+    </fragment>
 </navigation>

@@ -7,6 +7,9 @@
     <color name="green">#15CF00</color>
     <color name="lightBlack">#333333</color>
     <color name="gray">#999999</color>
+    <color name="gray3">#8F8F8F</color>
+    <color name="gray4">#ADADAD</color>
+    <color name="gray5">#ADADAD</color>
     <color name="gray2">#DEDEDE</color>
     <color name="unchecked_bottom_nav_color">#A0C0BB</color>
 </resources>
