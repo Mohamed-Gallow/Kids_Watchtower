@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".LoginFragment">
+    tools:context=".auth.LoginFragment">
 
     <View
         android:id="@+id/view2"
@@ -13,6 +13,7 @@
         android:background="@drawable/gradiant_bg" />
 
     <ImageView
+        android:id="@+id/ivLoginBackArrow"
         android:layout_width="27dp"
         android:layout_height="20dp"
         android:layout_marginStart="11dp"
@@ -76,8 +77,8 @@
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
                     android:background="@drawable/google_button_bg"
-                    android:drawableStart="@drawable/facebook_icon"
                     android:text="Continue with google"
+                    android:drawableLeft=""
                     android:textColor="@color/lightBlack"
                     app:backgroundTint="@null" />
             </androidx.cardview.widget.CardView>
@@ -111,12 +112,13 @@
             </LinearLayout>
 
             <EditText
+                android:id="@+id/etLoginEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
                 android:layout_marginTop="18sp"
                 android:background="@drawable/et_border"
-                android:hint="username"
+                android:hint="email"
                 android:inputType="textEmailAddress"
                 android:lines="1"
                 android:paddingHorizontal="10dp"
@@ -124,6 +126,7 @@
                 android:textSize="14sp" />
 
             <EditText
+                android:id="@+id/etLoginPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
@@ -161,6 +164,7 @@
             </LinearLayout>
 
             <Button
+                android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
@@ -186,6 +190,7 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/tvSignUp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="sign up"

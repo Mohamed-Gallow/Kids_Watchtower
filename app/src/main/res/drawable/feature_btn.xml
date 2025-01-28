@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <corners android:radius="16dp" />
             <stroke android:width="1dp" android:color="@color/unchecked_bottom_nav_color" />
-            <padding android:bottom="10dp" android:left="10dp" android:right="10dp" android:top="10dp" />
+            <corners android:radius="16dp" />
+            <solid android:color="@color/white" />
         </shape>
     </item>
+
     <item>
         <shape android:shape="rectangle">
             <stroke android:width="1dp" android:color="@color/blueGreen" />
             <corners android:radius="16dp" />
-            <padding android:bottom="10dp" android:left="10dp" android:right="10dp" android:top="10dp" />
+            <solid android:color="@color/white" />
         </shape>
     </item>
 </selector>

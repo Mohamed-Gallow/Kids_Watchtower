@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".RegisterFragment">
+    tools:context=".auth.RegisterFragment">
 
     <View
         android:id="@+id/view2"
@@ -13,6 +13,7 @@
         android:background="@drawable/gradiant_bg" />
 
     <ImageView
+        android:id="@+id/ivRegisterBackArrow"
         android:layout_width="27dp"
         android:layout_height="20dp"
         android:layout_marginStart="11dp"
@@ -72,6 +73,7 @@
                 app:cardElevation="2dp">
 
                 <Button
+                    android:id="@+id/btnRegisterWithGoogle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/google_button_bg"
@@ -111,6 +113,7 @@
             </LinearLayout>
 
             <EditText
+                android:id="@+id/etRegisterUsername"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
@@ -124,6 +127,7 @@
                 android:paddingVertical="14dp" />
 
             <EditText
+                android:id="@+id/etRegisterEmail"
                 android:layout_width="match_parent"
                 android:inputType="textEmailAddress"
                 android:layout_height="wrap_content"
@@ -136,6 +140,7 @@
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="14dp" />
             <EditText
+                android:id="@+id/etRegisterPassword"
                 android:layout_width="match_parent"
                 android:inputType="textPassword"
                 android:layout_height="wrap_content"
@@ -155,6 +160,7 @@
                 android:layout_marginTop="10dp">
 
                 <CheckBox
+                    android:id="@+id/cbRememberMe"
                     android:layout_width="0dp"
                     android:buttonTint="@drawable/checkbox_selector"
                     android:layout_height="wrap_content"
@@ -167,6 +173,7 @@
             </LinearLayout>
 
             <Button
+                android:id="@+id/btnRegister"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
@@ -192,6 +199,7 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/tvSignIn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="sign in"

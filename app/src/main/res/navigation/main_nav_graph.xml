@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_nav_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/childNameFragment">
 
     <fragment
         android:id="@+id/homeFragment"
@@ -25,4 +25,14 @@
         android:name="com.example.gomahrepoproject.main.profile.ProfileFragment"
         android:label="fragment_profile"
         tools:layout="@layout/fragment_profile" />
+    <fragment
+        android:id="@+id/connectPhoneFragment"
+        android:name="com.example.gomahrepoproject.ConnectPhoneFragment"
+        android:label="fragment_connect_phone"
+        tools:layout="@layout/fragment_connect_phone" />
+    <fragment
+        android:id="@+id/childNameFragment"
+        android:name="com.example.gomahrepoproject.ChildNameFragment"
+        android:label="fragment_child_name"
+        tools:layout="@layout/fragment_child_name" />
 </navigation>

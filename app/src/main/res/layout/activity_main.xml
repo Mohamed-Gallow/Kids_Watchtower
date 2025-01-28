@@ -35,7 +35,7 @@
         app:labelVisibilityMode="labeled"
         app:itemIconTint="@drawable/bottom_nav_color"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:background="@color/backgroundWhite"
+        android:background="@color/white"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

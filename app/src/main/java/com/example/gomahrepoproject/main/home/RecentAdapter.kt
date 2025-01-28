@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.R
-import com.example.gomahrepoproject.main.data.Data
+import com.example.gomahrepoproject.data.Data
 
 class RecentAdapter(private val recentSocialList: List<Data>) :
     RecyclerView.Adapter<RecentAdapter.ItemViewHolder>() {

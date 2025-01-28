@@ -1,4 +1,4 @@
-package com.example.gomahrepoproject.main.data
+package com.example.gomahrepoproject.data
 
 data class Data(
     val socialImage:Int,
