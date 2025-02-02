@@ -25,7 +25,7 @@
     </fragment>
     <fragment
         android:id="@+id/personTypeFragment"
-        android:name="com.example.gomahrepoproject.PersonTypeFragment"
+        android:name="com.example.gomahrepoproject.auth.PersonTypeFragment"
         android:label="fragment_person_type"
         tools:layout="@layout/fragment_person_type" >
         <action
@@ -34,7 +34,7 @@
     </fragment>
     <fragment
         android:id="@+id/opreationFragment"
-        android:name="com.example.gomahrepoproject.OperationFragment"
+        android:name="com.example.gomahrepoproject.auth.OperationFragment"
         android:label="fragment_opreation"
         tools:layout="@layout/fragment_operation" >
         <action

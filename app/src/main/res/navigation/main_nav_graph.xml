@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_nav_graph"
-    app:startDestination="@id/childNameFragment">
+    app:startDestination="@id/secuLogFragment">
 
     <fragment
         android:id="@+id/homeFragment"
@@ -27,12 +27,22 @@
         tools:layout="@layout/fragment_profile" />
     <fragment
         android:id="@+id/connectPhoneFragment"
-        android:name="com.example.gomahrepoproject.ConnectPhoneFragment"
+        android:name="com.example.gomahrepoproject.main.link.ConnectPhoneFragment"
         android:label="fragment_connect_phone"
         tools:layout="@layout/fragment_connect_phone" />
     <fragment
         android:id="@+id/childNameFragment"
-        android:name="com.example.gomahrepoproject.ChildNameFragment"
+        android:name="com.example.gomahrepoproject.main.link.ChildNameFragment"
         android:label="fragment_child_name"
         tools:layout="@layout/fragment_child_name" />
+    <fragment
+        android:id="@+id/blockAppsFragment"
+        android:name="com.example.gomahrepoproject.main.blockapps.BlockAppsFragment"
+        android:label="fragment_block_apps"
+        tools:layout="@layout/fragment_block_apps" />
+    <fragment
+        android:id="@+id/secuLogFragment"
+        android:name="com.example.gomahrepoproject.SecuBlockFragment"
+        android:label="fragment_secu_log"
+        tools:layout="@layout/fragment_secu_block_log" />
 </navigation>

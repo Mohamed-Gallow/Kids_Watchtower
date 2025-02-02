@@ -8,7 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentHomeBinding
-import com.example.gomahrepoproject.data.Data
+import com.example.gomahrepoproject.main.data.Data
 import com.google.android.gms.maps.GoogleMap
 
 
