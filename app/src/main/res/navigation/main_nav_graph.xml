@@ -45,4 +45,9 @@
         android:name="com.example.gomahrepoproject.SecuBlockFragment"
         android:label="fragment_secu_log"
         tools:layout="@layout/fragment_secu_block_log" />
+    <fragment
+        android:id="@+id/locationFragment"
+        android:name="com.example.gomahrepoproject.LocationFragment"
+        android:label="fragment_location"
+        tools:layout="@layout/fragment_location" />
 </navigation>

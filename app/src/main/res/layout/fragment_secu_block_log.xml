@@ -97,20 +97,20 @@
                 android:textSize="16sp"
                 android:layout_marginStart="14dp"/>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="@color/gray2" />
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/blockedSites"
-                android:layout_marginTop="10dp"
                 tools:listitem="@layout/secu_block_item"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"/>
-            <View
-                android:layout_width="match_parent"
-                android:background="@color/gray2"
-                android:layout_height="1dp"/>
+
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginTop="4dp"
                 android:layout_gravity="center"
                 android:layout_height="wrap_content">
                 <TextView
@@ -132,11 +132,12 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
+        android:layout_marginTop="180dp"
         android:background="@drawable/recent_activities_layout"
-        android:elevation="7dp"
+        android:elevation="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/blockedLayer">
 
         <LinearLayout

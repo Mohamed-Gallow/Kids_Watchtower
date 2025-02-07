@@ -11,7 +11,6 @@ import com.example.gomahrepoproject.databinding.FragmentBlockAppsBinding
 class BlockAppsFragment : Fragment() {
     private var _binding: FragmentBlockAppsBinding? = null
     private val binding get() = _binding!!
-    private lateinit var blockAppAdapter:
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
