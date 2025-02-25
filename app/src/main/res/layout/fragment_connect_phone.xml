@@ -14,7 +14,7 @@
         android:layout_height="20dp"
         android:layout_marginStart="11dp"
         android:layout_marginTop="60dp"
-        android:src="@drawable/baseline_keyboard_backspace_24"
+        android:src="@drawable/left_arrow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/blueGreen" />
@@ -113,7 +113,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/half_charge" />
+                android:src="@drawable/get_your_child_phone" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -134,7 +134,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/half_charge" />
+                android:src="@drawable/qr_code" />
 
             <TextView
                 android:layout_width="wrap_content"

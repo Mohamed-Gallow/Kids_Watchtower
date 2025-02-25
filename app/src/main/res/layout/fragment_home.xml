@@ -144,7 +144,6 @@
                 android:layout_marginEnd="27dp"
                 android:backgroundTint="@color/white"
                 android:src="@drawable/add_user"
-                android:tint="@color/gray"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/homeSpinner"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -256,8 +255,7 @@
                     android:layout_marginHorizontal="8dp"
                     android:backgroundTint="@color/white"
                     android:layout_marginTop="4dp"
-                    android:src="@drawable/add_user"
-                    android:tint="@color/gray" />
+                    android:src="@drawable/lock_outline" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_marginTop="4dp"
@@ -307,8 +305,7 @@
                     android:layout_marginTop="4dp"
                     android:layout_marginHorizontal="8dp"
                     android:backgroundTint="@color/white"
-                    android:src="@drawable/add_user"
-                    android:tint="@color/gray" />
+                    android:src="@drawable/mingcute_settings_line" />
                     <TextView
                         android:layout_marginTop="4dp"
                         android:textAlignment="center"

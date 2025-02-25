@@ -17,10 +17,9 @@
             android:layout_height="20dp"
             android:layout_marginStart="11dp"
             android:layout_marginTop="60dp"
-            android:src="@drawable/baseline_keyboard_backspace_24"
+            android:src="@drawable/left_arrow"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/blueGreen" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/txtFeatures"
@@ -66,8 +65,7 @@
                 android:background="@drawable/search_icon_bg"
                 android:elevation="1dp"
                 android:padding="10dp"
-                android:src="@drawable/baseline_search_24"
-                app:tint="@color/blueGreen" />
+                android:src="@drawable/search"/>
 
         </LinearLayout>
 

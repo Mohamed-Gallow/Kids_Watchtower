@@ -75,8 +75,10 @@
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/gmail"
                     android:textSize="14sp"
                     android:background="@drawable/google_button_bg"
+                    android:paddingHorizontal="67dp"
                     android:text="Continue with google"
                     android:textColor="@color/lightBlack"
                     app:backgroundTint="@null" />

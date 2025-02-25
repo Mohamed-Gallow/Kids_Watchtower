@@ -8,5 +8,13 @@
     tools:context=".splash.Splash1Fragment">
 
 
+    <ImageView
+        android:layout_width="190dp"
+        android:layout_height="115dp"
+        android:src="@drawable/logo"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="290dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

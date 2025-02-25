@@ -73,13 +73,13 @@
                 app:cardElevation="2dp">
 
                 <Button
-                    android:id="@+id/btnRegisterWithGoogle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/google_button_bg"
-                    android:drawableStart="@drawable/facebook_icon"
-                    android:text="Continue with google"
+                    android:drawableLeft="@drawable/gmail"
                     android:textSize="14sp"
+                    android:background="@drawable/google_button_bg"
+                    android:paddingHorizontal="67dp"
+                    android:text="Continue with google"
                     android:textColor="@color/lightBlack"
                     app:backgroundTint="@null" />
             </androidx.cardview.widget.CardView>
@@ -149,6 +149,7 @@
                 android:textSize="14sp"
                 android:layout_marginTop="10sp"
                 android:background="@drawable/et_border"
+                android:drawableEnd="@drawable/password_toggle"
                 android:hint="password"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="14dp" />
