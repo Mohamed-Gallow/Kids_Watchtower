@@ -20,5 +20,4 @@ class BlockAppsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_block_apps, container, false)
     }
 
-
 }

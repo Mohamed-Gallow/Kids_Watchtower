@@ -51,7 +51,7 @@
             android:background="@drawable/feature_btn"
             android:drawableLeft="@drawable/lock_outline"
             android:paddingVertical="16dp"
-            android:paddingHorizontal="130"
+            android:paddingHorizontal="130dp"
             android:text="Lock Device"
             android:textColor="@color/lightBlack"
             android:textSize="12sp"

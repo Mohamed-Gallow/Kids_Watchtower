@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentHomeBinding
@@ -16,9 +17,9 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var recentAdapter: RecentAdapter
-
     private var _binging: FragmentHomeBinding? = null
     private val binging get() = _binging!!
+    private val homeViewModel: HomeViewModel by viewModels()
     private lateinit var mGoogleMap: GoogleMap
 
     override fun onCreateView(
@@ -33,6 +34,14 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         prepareRecentAdapter()
+        manageTime()
+    }
+
+    private fun manageTime() {
+        binding.icManageTime.setOnClickListener {
+
+
+        }
     }
 
     private fun prepareRecentAdapter() {

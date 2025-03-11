@@ -28,6 +28,7 @@ class RecentAdapter(private val recentSocialList: List<Data>) :
         return recentSocialList.size
     }
 
+
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val recentSocial = recentSocialList[position]
         holder.apply {

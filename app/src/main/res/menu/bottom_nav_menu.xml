@@ -2,19 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/homeFragment"
-        android:icon="@drawable/home_icon"
+        android:icon="@drawable/home_ic"
         android:title="Home"/>
     <item
         android:id="@+id/featuresFragment"
-        android:icon="@drawable/baseline_category_24"
+        android:icon="@drawable/features_ic"
         android:title="Features"/>
     <item
         android:id="@+id/notificationFragment"
-        android:icon="@drawable/baseline_notifications_24"
+        android:icon="@drawable/notification_ic"
         android:title="Notifications"/>
     <item
         android:id="@+id/profileFragment"
-        android:icon="@drawable/baseline_person_24"
+        android:icon="@drawable/li_user"
         android:title="Profile"/>
 
 </menu>

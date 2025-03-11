@@ -47,6 +47,7 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <SearchView
+                android:id="@+id/blockAppSearchView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
@@ -93,6 +94,7 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvBlockedApps"
+                tools:listitem="@layout/block_apps_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
@@ -134,6 +136,7 @@
                     android:layout_width="match_parent"
                     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                     app:spanCount="5"
+                    tools:listitem="@layout/block_apps_item"
                     android:layout_height="wrap_content"
                     android:padding="10dp" />
 
