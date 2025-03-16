@@ -86,53 +86,11 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <LinearLayout
+                <Spinner
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_height="match_parent"
+                    tools:listitem="@layout/spinner_item"/>
 
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_gravity="center"
-                        android:layout_margin="8dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/pfp_placeholder"
-                        app:shapeAppearanceOverlay="@style/CircularImageView" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:orientation="vertical">
-
-                        <Spinner
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-
-                            <ImageView
-                                android:layout_width="8dp"
-                                android:layout_height="8dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/active_point" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="2dp"
-                                android:text="Active"
-                                android:textColor="@color/lightBlack" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </LinearLayout>
             </androidx.cardview.widget.CardView>
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -143,6 +101,7 @@
                 android:layout_marginTop="111dp"
                 android:layout_marginEnd="27dp"
                 android:backgroundTint="@color/white"
+                android:contentDescription="TODO"
                 android:src="@drawable/add_user"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/homeSpinner"
@@ -256,6 +215,7 @@
                         android:layout_marginHorizontal="8dp"
                         android:layout_marginTop="4dp"
                         android:backgroundTint="@color/white"
+                        android:contentDescription="TODO"
                         android:src="@drawable/lock_outline" />
 
                     <TextView
@@ -307,7 +267,8 @@
                     android:layout_marginTop="4dp"
                     android:layout_marginHorizontal="8dp"
                     android:backgroundTint="@color/white"
-                    android:src="@drawable/mingcute_settings_line" />
+                    android:contentDescription="TODO"
+                    android:src="@drawable/manage_time" />
                     <TextView
                         android:layout_marginTop="4dp"
                         android:textAlignment="center"

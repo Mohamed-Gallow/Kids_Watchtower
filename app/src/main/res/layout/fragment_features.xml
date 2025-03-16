@@ -41,6 +41,7 @@
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="118dp"
         android:orientation="vertical"
+        android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -62,12 +63,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:layout_marginEnd="4dp"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/location_on"
                 android:background="@drawable/feature_btn"
@@ -81,7 +83,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
                 android:drawableTop="@drawable/av_timer"
-                android:layout_marginStart="4dp"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/feature_btn"
                 android:paddingVertical="20sp"
@@ -93,14 +95,15 @@
 
         <LinearLayout
             android:layout_width="match_parent"
+            android:gravity="center"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
             <Button
+                android:layout_margin="4dp"
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:layout_marginEnd="4dp"
                 android:drawableTop="@drawable/block_app"
                 android:layout_marginTop="-3.5dp"
                 android:layout_weight="1"
@@ -114,7 +117,7 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:layout_marginStart="4dp"
+                android:layout_margin="4dp"
                 android:drawableTop="@drawable/security"
                 android:layout_weight="1"
                 android:background="@drawable/feature_btn"

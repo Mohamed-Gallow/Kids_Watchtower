@@ -1,5 +1,6 @@
 package com.example.gomahrepoproject.auth
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +11,7 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentLoginBinding
+import com.example.gomahrepoproject.ui.MainActivity
 
 
 class LoginFragment : Fragment() {
@@ -28,22 +30,11 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        observeLogin()
         initButtons()
-        setupLogin()
     }
 
     private fun initButtons() {
-        binding.tvSignUp.setOnClickListener {
-            this@LoginFragment.findNavController()
-                .navigate(R.id.action_loginFragment_to_registerFragment)
-        }
-        binding.ivLoginBackArrow.setOnClickListener {
-            this@LoginFragment.findNavController()
-                .popBackStack()
-        }
-    }
-
-    private fun setupLogin() {
         binding.btnLogin.setOnClickListener {
             val email = binding.etLoginEmail.text.toString().trim()
             val password = binding.etLoginPassword.text.toString()
@@ -53,11 +44,39 @@ class LoginFragment : Fragment() {
                 authViewModel.login(email, password)
             }
         }
+
+        binding.tvSignUp.setOnClickListener {
+            this@LoginFragment.findNavController()
+                .navigate(R.id.action_loginFragment_to_registerFragment)
+        }
+
+        binding.tvResetPasswordButton.setOnClickListener {
+            this@LoginFragment.findNavController()
+                .navigate(R.id.action_loginFragment_to_sendResetPasswordFragment)
+        }
+
     }
+
+    private fun observeLogin() {
+        authViewModel.authState.observe(viewLifecycleOwner) { user ->
+            if (user != null) {
+                if (user.displayName.isNullOrEmpty()) {
+                    findNavController().navigate(R.id.action_loginFragment_to_setUsernameFragment)
+                } else {
+                    Intent(requireContext(), MainActivity::class.java).also { startActivity(it) }
+                    requireActivity().finish()
+                }
+            }
+        }
+
+        authViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-
 }

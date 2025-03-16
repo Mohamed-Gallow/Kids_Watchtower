@@ -118,8 +118,8 @@
 
                 <ImageView
                     android:src="@drawable/arrow_down"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_width="10dp"
+                    android:layout_height="10dp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
