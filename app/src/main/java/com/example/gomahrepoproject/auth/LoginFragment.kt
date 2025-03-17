@@ -52,7 +52,7 @@ class LoginFragment : Fragment() {
 
         binding.tvResetPasswordButton.setOnClickListener {
             this@LoginFragment.findNavController()
-                .navigate(R.id.action_loginFragment_to_sendResetPasswordFragment)
+                .navigate(R.id.action_loginFragment_to_sendEmailToResetPasswordFragment)
         }
 
     }

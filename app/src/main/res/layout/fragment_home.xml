@@ -98,6 +98,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                app:tint="@color/black"
                 android:layout_marginTop="111dp"
                 android:layout_marginEnd="27dp"
                 android:backgroundTint="@color/white"
@@ -212,6 +213,7 @@
                         android:id="@+id/icLockDevice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        app:tint="@color/black"
                         android:layout_marginHorizontal="8dp"
                         android:layout_marginTop="4dp"
                         android:backgroundTint="@color/white"
@@ -266,6 +268,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginHorizontal="8dp"
+                    app:tint="@color/black"
                     android:backgroundTint="@color/white"
                     android:contentDescription="TODO"
                     android:src="@drawable/manage_time" />

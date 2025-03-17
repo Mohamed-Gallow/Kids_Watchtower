@@ -13,6 +13,12 @@
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
             app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_sendEmailToResetPasswordFragment"
+            app:destination="@id/sendEmailToResetPasswordFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_setUsernameFragment"
+            app:destination="@id/setUsernameFragment" />
     </fragment>
     <fragment
         android:id="@+id/registerFragment"
@@ -42,6 +48,24 @@
             app:destination="@id/registerFragment" />
         <action
             android:id="@+id/action_operationFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/sendEmailToResetPasswordFragment"
+        android:name="com.example.gomahrepoproject.auth.SendEmailToResetPasswordFragment"
+        android:label="fragment_send_email_to_reset_password"
+        tools:layout="@layout/fragment_send_email_to_reset_password" >
+        <action
+            android:id="@+id/action_sendEmailToResetPasswordFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/setUsernameFragment"
+        android:name="com.example.gomahrepoproject.auth.SetUsernameFragment"
+        android:label="fragment_set_username"
+        tools:layout="@layout/fragment_set_username" >
+        <action
+            android:id="@+id/action_setUsernameFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
     </fragment>
 </navigation>

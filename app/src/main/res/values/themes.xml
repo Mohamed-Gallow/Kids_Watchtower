@@ -3,8 +3,8 @@
     <style name="Base.Theme.GomahRepoProject" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <item name="colorPrimary">@color/blueGreen</item>
-        <item name="android:navigationBarColor">@color/blueGreen</item>
-        <item name="android:statusBarColor">@color/blueGreen</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:statusBarColor">@color/lightBlack</item>
     </style>
 
     <style name="Theme.GomahRepoProject" parent="Base.Theme.GomahRepoProject" />
