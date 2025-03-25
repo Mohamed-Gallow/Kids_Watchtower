@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
@@ -26,6 +27,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         checkIfLoggedIn()
+
     }
 
     fun login(email: String, password: String) {
@@ -47,8 +49,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun register(email: String, password: String) {
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
+            .addOnCompleteListener {registerTask ->
+                if (registerTask.isSuccessful) {
                     val user = auth.currentUser
                     user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
                         if (verificationTask.isSuccessful) {
@@ -60,10 +62,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                 } else {
-                    if (task.exception is FirebaseAuthUserCollisionException) {
+                    if (registerTask.exception is FirebaseAuthUserCollisionException) {
                         _errorMessage.value = "Already Registered"
                     } else {
-                        _errorMessage.value = task.exception?.message
+                        _errorMessage.value = registerTask.exception?.message
                     }
                 }
             }

@@ -47,7 +47,7 @@
         tools:layout="@layout/fragment_secu_block_log" />
     <fragment
         android:id="@+id/locationFragment"
-        android:name="com.example.gomahrepoproject.LocationFragment"
+        android:name="com.example.gomahrepoproject.main.location.LocationFragment"
         android:label="fragment_location"
         tools:layout="@layout/fragment_location" />
 </navigation>
