@@ -9,7 +9,11 @@
         android:id="@+id/homeFragment"
         android:name="com.example.gomahrepoproject.main.home.HomeFragment"
         android:label="fragment_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_homeFragment_to_locationFragment"
+            app:destination="@id/locationFragment" />
+    </fragment>
     <fragment
         android:id="@+id/notificationFragment"
         android:name="com.example.gomahrepoproject.main.notifications.NotificationFragment"
@@ -49,5 +53,9 @@
         android:id="@+id/locationFragment"
         android:name="com.example.gomahrepoproject.main.location.LocationFragment"
         android:label="fragment_location"
-        tools:layout="@layout/fragment_location" />
+        tools:layout="@layout/fragment_location" >
+        <action
+            android:id="@+id/action_locationFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
 </navigation>

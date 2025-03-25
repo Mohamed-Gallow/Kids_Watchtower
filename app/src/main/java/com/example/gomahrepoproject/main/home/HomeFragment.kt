@@ -6,22 +6,29 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.auth.AuthViewModel
 import com.example.gomahrepoproject.databinding.FragmentHomeBinding
 import com.example.gomahrepoproject.main.data.Data
 import com.example.gomahrepoproject.main.profile.ProfileViewModel
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment() , OnMapReadyCallback {
     private var _binding: FragmentHomeBinding? = null
+
+
     private val binding get() = _binding!!
     private lateinit var recentAdapter: RecentAdapter
     private val profileViewModel : ProfileViewModel by viewModels()
     private val homeViewModel: HomeViewModel by viewModels()
-    private lateinit var mGoogleMap: GoogleMap
+    private lateinit var googleMap: GoogleMap
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,7 +44,20 @@ class HomeFragment : Fragment() {
         prepareRecentAdapter()
         manageTime()
         setupUserData()
+
+        binding.txtSee.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_locationFragment)
+        }
     }
+
+    override fun onMapReady(p0: GoogleMap) {
+        googleMap = p0
+
+        val location = LatLng(30.033333, 31.233334)
+        googleMap.addMarker(MarkerOptions().position(location).title("Cairo"))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location,10f))
+    }
+
 
     private fun setupUserData(){
         profileViewModel.user.observe(viewLifecycleOwner) { user ->
