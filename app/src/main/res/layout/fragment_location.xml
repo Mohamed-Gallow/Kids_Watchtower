@@ -69,6 +69,7 @@
                 app:shapeAppearanceOverlay="@style/CircularImageView" />
 
             <TextView
+                android:id="@+id/tvLocationUsername"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
