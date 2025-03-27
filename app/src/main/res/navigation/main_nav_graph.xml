@@ -27,7 +27,19 @@
         android:id="@+id/featuresFragment"
         android:name="com.example.gomahrepoproject.main.features.FeaturesFragment"
         android:label="fragment_features"
-        tools:layout="@layout/fragment_features" />
+        tools:layout="@layout/fragment_features" >
+
+        <!-- Add this action to navigate to BlockAppsFragment -->
+        <action
+            android:id="@+id/action_featuresFragment_to_blockAppsFragment"
+            app:destination="@id/blockAppsFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
+
+    </fragment>
+
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.gomahrepoproject.main.profile.ProfileFragment"
@@ -47,7 +59,8 @@
         android:id="@+id/blockAppsFragment"
         android:name="com.example.gomahrepoproject.main.blockapps.BlockAppsFragment"
         android:label="fragment_block_apps"
-        tools:layout="@layout/fragment_block_apps" />
+        tools:layout="@layout/fragment_block_apps"
+        />
     <fragment
         android:id="@+id/secuLogFragment"
         android:name="com.example.gomahrepoproject.SecuBlockFragment"

@@ -9,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.example.gomahrepoproject.R
-import com.google.firebase.auth.FirebaseAuth
 
 class BlockAppsFragment : Fragment(R.layout.fragment_block_apps) {
 
@@ -19,7 +18,7 @@ class BlockAppsFragment : Fragment(R.layout.fragment_block_apps) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val userId = FirebaseAuth.getInstance().currentUser?.uid // Replace with actual user ID
+        val userId = "USER_ID" // Replace with actual user ID غيرهم انت بقى ما تتفزلكش
         val childId = "CHILD_ID" // Replace with actual child ID
 
         viewModel.initialize(requireContext())
@@ -31,12 +30,10 @@ class BlockAppsFragment : Fragment(R.layout.fragment_block_apps) {
         })
 
         // Load blocked apps for the given user & child
-        if (userId != null) {
-            viewModel.loadBlockedApps(userId, childId)
-        }
+        viewModel.loadBlockedApps(userId, childId)
 
         // Start monitoring running apps
-        viewModel.startMonitoringApps { appPackage ->
+        viewModel.startMonitoringApps { appPackage: String ->  // Explicit type
             Log.d("BlockedApps", "Detected app: $appPackage")
 
             if (blockedApps.contains(appPackage)) {

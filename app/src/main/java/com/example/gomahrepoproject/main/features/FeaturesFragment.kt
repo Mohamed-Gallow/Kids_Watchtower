@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentFeaturesBinding
-
 
 class FeaturesFragment : Fragment() {
     private var _binding: FragmentFeaturesBinding? = null
@@ -62,4 +62,15 @@ class FeaturesFragment : Fragment() {
         _binding = null
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Find the button in your fragment layout
+        val blockAppsButton: Button = view.findViewById(R.id.btn_block_apps)
+
+        // Navigate to BlockAppsFragment when the button is clicked
+        blockAppsButton.setOnClickListener {
+            findNavController().navigate(R.id.action_featuresFragment_to_blockAppsFragment)
+        }
+    }
 }
