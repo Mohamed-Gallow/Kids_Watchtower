@@ -46,17 +46,27 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <Button
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/feature_btn"
-            android:drawableLeft="@drawable/lock_outline"
-            android:paddingVertical="16dp"
-            android:paddingHorizontal="130dp"
-            android:text="Lock Device"
-            android:textColor="@color/lightBlack"
-            android:textSize="12sp"
-            app:backgroundTint="@null" />
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:layout_marginHorizontal="8dp"
+            android:background="@drawable/feature_btn">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginHorizontal="4dp"
+                android:src="@drawable/lock_outline"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:textStyle="bold"
+                android:layout_marginHorizontal="4dp"
+                android:textSize="12sp"
+                android:layout_height="wrap_content"
+                android:text="Lock Device"/>
+        </LinearLayout>
+
+      
 
 
         <LinearLayout
@@ -66,31 +76,47 @@
             android:gravity="center"
             android:orientation="horizontal">
 
-            <Button
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:layout_margin="4dp"
-                android:layout_weight="1"
-                android:drawableTop="@drawable/location_on"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="8dp"
+                android:gravity="center"
                 android:background="@drawable/feature_btn"
-                android:paddingVertical="20sp"
-                android:text="Location"
-                android:textColor="@color/lightBlack"
-                android:textSize="12sp"
-                app:backgroundTint="@null" />
+                android:layout_weight="1">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/location_on"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
 
-            <Button
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:drawableTop="@drawable/av_timer"
-                android:layout_margin="4dp"
-                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:orientation="vertical"
+                android:gravity="center"
                 android:background="@drawable/feature_btn"
-                android:paddingVertical="20sp"
-                android:text="App Block Time"
-                android:textColor="@color/lightBlack"
-                android:textSize="12sp"
-                app:backgroundTint="@null" />
+                android:layout_weight="1">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/av_timer"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="App Block Time"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -100,32 +126,49 @@
             android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
-            <Button
-                android:layout_margin="4dp"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:drawableTop="@drawable/block_app"
-                android:layout_marginTop="-3.5dp"
-                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="8dp"
+                android:gravity="center"
                 android:background="@drawable/feature_btn"
-                android:paddingVertical="20sp"
-                android:text="App Block"
-                android:textColor="@color/lightBlack"
-                android:textSize="12sp"
-                app:backgroundTint="@null" />
+                android:layout_weight="1">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/block_app"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="App Block"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
 
-            <Button
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="94dp"
-                android:layout_margin="4dp"
-                android:drawableTop="@drawable/security"
-                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginHorizontal="8dp"
+                android:gravity="center"
                 android:background="@drawable/feature_btn"
-                android:paddingVertical="20sp"
-                android:text="Security Log"
-                android:textColor="@color/lightBlack"
-                android:textSize="12sp"
-                app:backgroundTint="@null" />
+                android:layout_weight="1">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/security"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Security Log"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
         </LinearLayout>
 
         <View

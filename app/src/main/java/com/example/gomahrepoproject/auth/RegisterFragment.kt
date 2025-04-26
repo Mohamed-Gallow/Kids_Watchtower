@@ -41,7 +41,7 @@ class RegisterFragment : Fragment() {
             if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(requireContext(), "fill all fields", Toast.LENGTH_SHORT).show()
             } else {
-                authViewModel.register(email, password)
+                authViewModel.register(email, password,"parent")
             }
         }
 

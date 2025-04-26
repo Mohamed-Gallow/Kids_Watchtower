@@ -7,10 +7,12 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentBlockAppsBinding
+import com.google.firebase.auth.FirebaseAuth
 
 class BlockAppsFragment : Fragment() {
     private var _binding: FragmentBlockAppsBinding? = null
     private val binding get() = _binding!!
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -20,4 +22,9 @@ class BlockAppsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_block_apps, container, false)
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val user = FirebaseAuth.getInstance().currentUser
+
+    }
 }

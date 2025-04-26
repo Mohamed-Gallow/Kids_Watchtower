@@ -72,6 +72,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         }
     }
 
+
     private fun prepareRecentAdapter() {
         recentAdapter = RecentAdapter(
             listOf(
@@ -87,6 +88,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             adapter = recentAdapter
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -47,13 +47,23 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-    fun register(email: String, password: String) {
+    fun register(email: String, password: String , role : String) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {registerTask ->
                 if (registerTask.isSuccessful) {
                     val user = auth.currentUser
                     user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
                         if (verificationTask.isSuccessful) {
+
+                            // حفظ النوع في  Realtime Database
+
+                            val userId = user.uid
+                            val userData = mapOf(
+                                "email" to email,
+                                "role" to role
+                            )
+                            firebaseRef.child(userId).setValue(userData)
+
                             _errorMessage.value =
                                 "Registered Successfully, check your email for verification."
                         } else {
