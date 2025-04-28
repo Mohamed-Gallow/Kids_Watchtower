@@ -62,6 +62,23 @@ class OperationFragment : Fragment() {
         }
     }
 
+    private fun observeLogin() {
+        authViewModel.authState.observe(viewLifecycleOwner) { user ->
+            if (user != null) {
+                if (user.displayName.isNullOrEmpty()) {
+                    findNavController().navigate(R.id.action_loginFragment_to_setUsernameFragment)
+                } else {
+                    Intent(requireContext(), MainActivity::class.java).also { startActivity(it) }
+                    requireActivity().finish()
+                }
+            }
+        }
+
+        authViewModel.errorMessage.observe(viewLifecycleOwner) { message ->
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
