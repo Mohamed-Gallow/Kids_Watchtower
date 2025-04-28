@@ -38,10 +38,15 @@ class RegisterFragment : Fragment() {
         binding.btnRegister.setOnClickListener {
             val email = binding.etRegisterEmail.text.toString().trim()
             val password = binding.etRegisterPassword.text.toString()
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "fill all fields", Toast.LENGTH_SHORT).show()
+            val confirmPassword = binding.etConfirmPassword.text.toString()
+            if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                showToast("fill all fields")
+            } else if (password != confirmPassword) {
+                showToast("match password field with confirm field")
             } else {
                 authViewModel.register(email, password,"parent")
+                this@RegisterFragment.findNavController()
+                    .navigate(R.id.action_registerFragment_to_loginFragment)
             }
         }
 
@@ -50,6 +55,10 @@ class RegisterFragment : Fragment() {
                 .navigate(R.id.action_registerFragment_to_loginFragment)
         }
 
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     private fun observeRegister() {

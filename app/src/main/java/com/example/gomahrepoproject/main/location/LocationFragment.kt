@@ -13,11 +13,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.gomahrepoproject.auth.AuthViewModel
 import com.example.gomahrepoproject.databinding.FragmentLocationBinding
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 
 
@@ -25,7 +30,11 @@ class LocationFragment : Fragment() , OnMapReadyCallback{
     private var _binding  : FragmentLocationBinding?=null
     private val binding get() = _binding!!
     private val locationViewModel : LocationViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
     private lateinit var googleMap : GoogleMap
+    private var currentMarker: Marker? = null
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -50,6 +59,10 @@ class LocationFragment : Fragment() , OnMapReadyCallback{
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
+
         initViews()
     }
 
@@ -82,9 +95,15 @@ class LocationFragment : Fragment() , OnMapReadyCallback{
 
         binding.btnStopLiveLocation.setOnClickListener {
             val intent = Intent(requireContext(), LocationService::class.java)
-            requireContext().startService(intent)
+            requireContext().stopService(intent)
             showToast("live location stopped")
         }
+
+        val firstName = authViewModel.auth.currentUser?.displayName
+            ?.split(" ")
+            ?.firstOrNull()
+            ?.replaceFirstChar { it.uppercase() }
+        "$firstName's Phone".also { binding.tvLocationUsername.text = it }
     }
 
     private fun showToast(message: String) {

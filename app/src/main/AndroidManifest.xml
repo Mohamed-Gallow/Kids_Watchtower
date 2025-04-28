@@ -22,16 +22,14 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="false" />
-        <activity
-            android:name=".ui.AuthActivity"
-            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_map_api_key" />
 
         <activity
-            android:name=".ui.SplashActivity"
+            android:name=".ui.AuthActivity"
+            android:theme="@style/Theme.GomahRepoProject.SplashScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

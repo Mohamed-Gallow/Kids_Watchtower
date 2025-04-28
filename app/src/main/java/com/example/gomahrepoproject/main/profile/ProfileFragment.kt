@@ -30,6 +30,11 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupLogout()
+        initViews()
+    }
+
+    private fun initViews(){
+        binding.tvProfileEmail.text=authViewModel.auth.currentUser?.email ?: "not found yet"
     }
 
     private fun setupLogout(){

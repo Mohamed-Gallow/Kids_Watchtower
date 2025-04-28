@@ -12,6 +12,7 @@ buildscript {
     }
     dependencies {
         val nav_version = "2.8.3"
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0") // تحديد الإصدار مباشرةً
         classpath("androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version")
     }
 }
