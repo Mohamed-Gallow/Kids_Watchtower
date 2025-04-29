@@ -3,7 +3,7 @@
     <style name="Base.Theme.GomahRepoProject" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
          <item name="colorPrimary">@color/lightBlack</item>
-         <item name="android:navigationBarColor">@color/backgroundWhite</item>
+         <item name="android:navigationBarColor">@color/white</item>
          <item name="android:statusBarColor">@color/lightBlack</item>
     </style>
 

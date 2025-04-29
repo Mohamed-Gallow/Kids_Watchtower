@@ -12,5 +12,6 @@
     <color name="gray5">#ADADAD</color>
     <color name="gray2">#DEDEDE</color>
     <color name="red">#E51804</color>
+    <color name="blue">#2196F3</color>
     <color name="unchecked_bottom_nav_color">#A0C0BB</color>
 </resources>

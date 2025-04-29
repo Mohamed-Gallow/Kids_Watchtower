@@ -111,7 +111,8 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/locationLayer"
                 android:layout_width="match_parent"
-                android:layout_height="166dp"
+                android:layout_height="wrap_content"
+                android:paddingVertical="24dp"
                 android:layout_marginHorizontal="30dp"
                 android:layout_marginTop="173dp"
                 app:cardCornerRadius="8dp"
@@ -164,10 +165,11 @@
                     </androidx.cardview.widget.CardView>
 
                     <TextView
+                        android:id="@+id/tvLocationName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="12dp"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginVertical="10dp"
                         android:text="PSG- Paris Saint German - PARIS"
                         android:textColor="@color/gray"
                         android:textSize="12sp"/>

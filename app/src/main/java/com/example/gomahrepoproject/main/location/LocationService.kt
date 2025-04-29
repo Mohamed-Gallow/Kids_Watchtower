@@ -10,6 +10,7 @@ import android.os.IBinder
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.example.gomahrepoproject.R
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
@@ -47,12 +48,22 @@ class LocationService : Service() {
             .setContentText("$lat $lng")
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
-            if (ContextCompat.checkSelfPermission(this,POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED){
-                startForeground(1,notification)
+        val sharedPreferences = getSharedPreferences("location_prefs", MODE_PRIVATE)
+        sharedPreferences.edit() {
+            putString("lat", lat)
+                .putString("lng", lng)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                startForeground(1, notification)
             }
-        }else{
-            startForeground(1,notification)
+        } else {
+            startForeground(1, notification)
         }
     }
 
