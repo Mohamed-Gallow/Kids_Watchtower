@@ -28,17 +28,21 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class LocationFragment : Fragment(), OnMapReadyCallback {
-
     private var _binding: FragmentLocationBinding? = null
     private val binding get() = _binding!!
     private val authViewModel: AuthViewModel by viewModels()
-    private val locationViewModel : LocationViewModel by viewModels()
+    private val locationViewModel: LocationViewModel by viewModels()
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var googleMap: GoogleMap
     private var currentMarker: Marker? = null
+    private var childMarker: Marker? = null
 
     private val pathPoints = mutableListOf<LatLng>()
     private var polyline: Polyline? = null
@@ -46,16 +50,16 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     private val handler = Handler(Looper.getMainLooper())
     private var lastLatLng: LatLng? = null
     private var isStopped = false
+    private var childId: String? = null
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             val location = locationResult.lastLocation ?: return
             val latLng = LatLng(location.latitude, location.longitude)
-            val lat = locationResult.lastLocation?.latitude.toString()
-            val lng = locationResult.lastLocation?.longitude.toString()
-            val locationModel = LocationModel(lat,lng)
+            val lat = location.latitude.toString()
+            val lng = location.longitude.toString()
+            val locationModel = LocationModel(lat, lng)
             locationViewModel.sendCurrentLocationToFirebase(locationModel)
-
 
             if (currentMarker == null) {
                 currentMarker = googleMap.addMarker(
@@ -87,6 +91,9 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             if (allGranted) {
                 startLocationUpdates()
                 startLocationService()
+                if (childId != null) {
+                    locationViewModel.requestChildLocationSharing(childId!!)
+                }
                 showToast("Live location started")
             } else {
                 showToast("All permissions must be granted")
@@ -109,6 +116,24 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
         mapFragment?.getMapAsync(this)
 
+        // Get child ID from Firebase
+        val userId = authViewModel.auth.currentUser?.uid
+        if (userId != null) {
+            FirebaseDatabase.getInstance().getReference("users").child(userId).child("linkedAccounts").child("childId")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        childId = snapshot.getValue(String::class.java)
+                        if (childId != null) {
+                            locationViewModel.listenForChildLocation(childId!!)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        showToast("Error fetching child ID: ${error.message}")
+                    }
+                })
+        }
+
         initViews()
     }
 
@@ -117,13 +142,16 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             checkPermissionsAndStart()
         }
 
-        binding.ivLoginBackArrow.setOnClickListener{
+        binding.ivLoginBackArrow.setOnClickListener {
             this@LocationFragment.findNavController().popBackStack()
         }
 
         binding.btnStopLiveLocation.setOnClickListener {
             stopLocationUpdates()
             stopLocationService()
+            if (childId != null) {
+                locationViewModel.stopChildLocationSharing(childId!!)
+            }
             showToast("Live location stopped")
         }
 
@@ -132,6 +160,21 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             ?.firstOrNull()
             ?.replaceFirstChar { it.uppercase() }
         "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+
+        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
+            val lat = location.latitude.toDoubleOrNull() ?: return@observe
+            val lng = location.longitude.toDoubleOrNull() ?: return@observe
+            val childLatLng = LatLng(lat, lng)
+            if (childMarker == null) {
+                childMarker = googleMap.addMarker(
+                    MarkerOptions().position(childLatLng).title("Child's Location")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                )
+            } else {
+                childMarker?.position = childLatLng
+            }
+            googleMap.moveCamera(CameraUpdateFactory.newLatLng(childLatLng))
+        }
     }
 
     private fun checkPermissionsAndStart() {
@@ -156,6 +199,9 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         } else {
             startLocationUpdates()
             startLocationService()
+            if (childId != null) {
+                locationViewModel.requestChildLocationSharing(childId!!)
+            }
             showToast("Live location started")
         }
     }
@@ -208,6 +254,7 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         stopLocationUpdates()
         _binding = null
     }
+
     private fun startStopTimer() {
         handler.postDelayed({
             if (isStopped) {
@@ -245,8 +292,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
         lastLatLng = newLatLng
     }
-
-
 
     private fun animateMarker() {
         currentMarker?.let { marker ->

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".main.link.ChildLinkFragment"
+    android:layout_height="match_parent"
+    android:background="@color/backgroundWhite">
+
+    <TextView
+        android:id="@+id/tvPendingRequest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        android:text="No pending requests"
+        android:textColor="@color/lightBlack"
+        android:textSize="18sp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <EditText
+        android:id="@+id/etVerificationCode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="26dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/curve_bg"
+        android:hint="Enter verification code"
+        android:paddingHorizontal="16sp"
+        android:paddingVertical="12dp"
+        android:textColor="@color/unchecked_bottom_nav_color"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/tvPendingRequest"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btnAcceptRequest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="40dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/scan_bg"
+        android:text="Accept Request"
+        android:textColor="@color/blueGreen"
+        android:textSize="17sp"
+        app:layout_constraintTop_toBottomOf="@id/etVerificationCode"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

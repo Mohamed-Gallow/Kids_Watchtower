@@ -65,6 +65,48 @@
                 android:layout_height="wrap_content"
                 android:text="Lock Device"/>
         </LinearLayout>
+        <LinearLayout
+            android:layout_marginTop="16sp"
+            android:id="@+id/btnLinkDevice"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:layout_marginHorizontal="8dp"
+            android:background="@drawable/feature_btn">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginHorizontal="4dp"
+                android:src="@drawable/device_management"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:textStyle="bold"
+                android:layout_marginHorizontal="4dp"
+                android:textSize="12sp"
+                android:layout_height="wrap_content"
+                android:text="Link Device"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_marginTop="16sp"
+            android:id="@+id/btnChildLink"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:gravity="center"
+            android:layout_marginHorizontal="8dp"
+            android:background="@drawable/feature_btn">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginHorizontal="4dp"
+                android:src="@drawable/device_management"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:textStyle="bold"
+                android:layout_marginHorizontal="4dp"
+                android:textSize="12sp"
+                android:layout_height="wrap_content"
+                android:text="Child Link"/>
+        </LinearLayout>
 
       
 

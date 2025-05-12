@@ -2,6 +2,7 @@ package com.example.gomahrepoproject.auth
 
 import android.app.Application
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -26,7 +27,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         checkIfLoggedIn()
-
     }
 
     fun login(email: String, password: String) {
@@ -46,27 +46,29 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-    fun register(email: String, password: String , role : String) {
+    fun register(email: String, password: String, role: String) {
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener {registerTask ->
+            .addOnCompleteListener { registerTask ->
                 if (registerTask.isSuccessful) {
                     val user = auth.currentUser
                     user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
                         if (verificationTask.isSuccessful) {
-
-
                             val userId = user.uid
                             val userData = mapOf(
                                 "email" to email,
                                 "role" to role
                             )
                             firebaseRef.child(userId).setValue(userData)
-
-                            _errorMessage.value =
-                                "Registered Successfully, check your email for verification."
+                                .addOnCompleteListener {
+                                    Log.d(TAG, "User data saved: $userData")
+                                    _errorMessage.value = "Registered successfully, check your email for verification."
+                                }
+                                .addOnFailureListener {
+                                    Log.e(TAG, "Failed to save user data: ${it.message}")
+                                    _errorMessage.value = "Registration successful, but failed to save user data."
+                                }
                         } else {
-                            _errorMessage.value =
-                                "Registration successful, but failed to send verification email."
+                            _errorMessage.value = "Registration successful, but failed to send verification email."
                         }
                     }
                 } else {
@@ -103,7 +105,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-
     private fun updateProfilePicture(photoUrl: String) {
         val user = auth.currentUser ?: return
         val profileUpdates = UserProfileChangeRequest.Builder()
@@ -120,7 +121,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
-
     fun logout() {
         auth.signOut()
         _authState.value = null
@@ -128,5 +128,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun checkIfLoggedIn() {
         _authState.value = auth.currentUser?.takeIf { it.isEmailVerified }
+    }
+
+    companion object {
+        const val TAG = "AuthViewModel"
     }
 }

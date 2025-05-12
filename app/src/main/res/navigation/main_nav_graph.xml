@@ -27,7 +27,14 @@
         android:id="@+id/featuresFragment"
         android:name="com.example.gomahrepoproject.main.features.FeaturesFragment"
         android:label="fragment_features"
-        tools:layout="@layout/fragment_features" />
+        tools:layout="@layout/fragment_features" >
+        <action
+            android:id="@+id/action_featuresFragment_to_connectPhoneFragment"
+            app:destination="@id/connectPhoneFragment" />
+        <action
+            android:id="@+id/action_featuresFragment_to_childLinkFragment"
+            app:destination="@id/childLinkFragment" />
+    </fragment>
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.gomahrepoproject.main.profile.ProfileFragment"
@@ -37,7 +44,14 @@
         android:id="@+id/connectPhoneFragment"
         android:name="com.example.gomahrepoproject.main.link.ConnectPhoneFragment"
         android:label="fragment_connect_phone"
-        tools:layout="@layout/fragment_connect_phone" />
+        tools:layout="@layout/fragment_connect_phone" >
+        <action
+            android:id="@+id/action_connectPhoneFragment_to_featuresFragment"
+            app:destination="@id/featuresFragment" />
+        <action
+            android:id="@+id/action_connectPhoneFragment_to_featuresFragment2"
+            app:destination="@id/featuresFragment" />
+    </fragment>
     <fragment
         android:id="@+id/childNameFragment"
         android:name="com.example.gomahrepoproject.main.link.ChildNameFragment"
@@ -65,5 +79,14 @@
             app:exitAnim="@android:anim/fade_out"
             app:popEnterAnim="@android:anim/fade_in"
             app:popExitAnim="@android:anim/fade_out" />
+    </fragment>
+    <fragment
+        android:id="@+id/childLinkFragment"
+        android:name="com.example.gomahrepoproject.main.link.ChildLinkFragment"
+        android:label="fragment_child_link"
+        tools:layout="@layout/fragment_child_link" >
+        <action
+            android:id="@+id/action_childLinkFragment_to_featuresFragment"
+            app:destination="@id/featuresFragment" />
     </fragment>
 </navigation>
