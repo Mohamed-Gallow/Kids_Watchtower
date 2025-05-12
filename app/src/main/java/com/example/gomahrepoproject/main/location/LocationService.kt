@@ -10,9 +10,7 @@ import android.os.IBinder
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import com.example.gomahrepoproject.R
-import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -29,9 +27,6 @@ class LocationService : Service() {
 
     private val locationCallBack by lazy {
         object : LocationCallback() {
-            override fun onLocationAvailability(p0: LocationAvailability) {
-                super.onLocationAvailability(p0)
-            }
 
             override fun onLocationResult(location: LocationResult) {
                 val lat = location.lastLocation?.latitude.toString()
@@ -48,11 +43,7 @@ class LocationService : Service() {
             .setContentText("$lat $lng")
             .build()
 
-        val sharedPreferences = getSharedPreferences("location_prefs", MODE_PRIVATE)
-        sharedPreferences.edit() {
-            putString("lat", lat)
-                .putString("lng", lng)
-        }
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
@@ -83,18 +74,13 @@ class LocationService : Service() {
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null)
     }
 
-    override fun onCreate() {
-        super.onCreate()
-    }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
        locationUpdates()
         return START_STICKY
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-    }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null

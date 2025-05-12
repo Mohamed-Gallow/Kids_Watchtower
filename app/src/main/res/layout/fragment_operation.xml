@@ -58,6 +58,7 @@
                 android:background="@drawable/parent_btn"
                 android:layout_marginTop="20dp"
                 android:textSize="18sp"
+                android:textColor="@color/white"
                 android:textStyle="bold"
                 app:backgroundTint="@null"
                 android:layout_height="wrap_content"/>

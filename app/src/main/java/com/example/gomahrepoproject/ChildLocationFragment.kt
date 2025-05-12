@@ -1,4 +1,4 @@
-package com.example.gomahrepoproject.main.location
+package com.example.gomahrepoproject
 
 import android.Manifest
 import android.animation.ArgbEvaluator
@@ -19,22 +19,33 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
-import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.auth.AuthViewModel
-import com.example.gomahrepoproject.databinding.FragmentLocationBinding
-import com.google.android.gms.location.*
+import com.example.gomahrepoproject.databinding.FragmentChildLocationBinding
+import com.example.gomahrepoproject.main.location.LocationService
+import com.example.gomahrepoproject.main.location.LocationViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Polyline
+import com.google.android.gms.maps.model.PolylineOptions
 
-class LocationFragment : Fragment(), OnMapReadyCallback {
+class ChildLocationFragment : Fragment(), OnMapReadyCallback {
 
-    private var _binding: FragmentLocationBinding? = null
+
+    private var _binding: FragmentChildLocationBinding? = null
     private val binding get() = _binding!!
     private val authViewModel: AuthViewModel by viewModels()
-    private val locationViewModel : LocationViewModel by viewModels()
+    private val locationViewModel: LocationViewModel by viewModels()
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var googleMap: GoogleMap
@@ -49,35 +60,35 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            val location = locationResult.lastLocation ?: return
-            val latLng = LatLng(location.latitude, location.longitude)
-            val lat = locationResult.lastLocation?.latitude.toString()
-            val lng = locationResult.lastLocation?.longitude.toString()
-            val locationModel = LocationModel(lat,lng)
-            locationViewModel.sendCurrentLocationToFirebase(locationModel)
-
-
-            if (currentMarker == null) {
-                currentMarker = googleMap.addMarker(
-                    MarkerOptions().position(latLng).title("My Location")
+            locationViewModel.loadCurrentLocationFromFirebase()
+            locationViewModel.currentLocation.observe(viewLifecycleOwner) { location ->
+                val latLng = LatLng(
+                    (location.first().latitude).toDouble(), (location.first().longitude).toDouble()
                 )
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+                Log.e("ChildLocationFragment", "onLocationResult: $latLng")
 
-                polyline = googleMap.addPolyline(
-                    PolylineOptions()
-                        .color(ContextCompat.getColor(requireContext(), R.color.blue))
-                        .width(15f)
-                        .geodesic(true)
-                )
-            } else {
-                currentMarker?.position = latLng
-                googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
+                if (currentMarker == null) {
+                    currentMarker = googleMap.addMarker(
+                        MarkerOptions().position(latLng).title("My Location")
+                    )
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+
+                    polyline = googleMap.addPolyline(
+                        PolylineOptions()
+                            .color(ContextCompat.getColor(requireContext(), R.color.blue))
+                            .width(15f)
+                            .geodesic(true)
+                    )
+                } else {
+                    currentMarker?.position = latLng
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
+                }
+
+                pathPoints.add(latLng)
+                polyline?.points = pathPoints
+
+                detectMovement(latLng)
             }
-
-            pathPoints.add(latLng)
-            polyline?.points = pathPoints
-
-            detectMovement(latLng)
         }
     }
 
@@ -97,41 +108,20 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentLocationBinding.inflate(inflater, container, false)
+        _binding = FragmentChildLocationBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        fusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(requireContext())
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
+        val mapFragment =
+            childFragmentManager.findFragmentById(R.id.childMap) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
 
-        initViews()
-    }
-
-    private fun initViews() {
-        binding.btnStartLiveLocation.setOnClickListener {
-            checkPermissionsAndStart()
-        }
-
-        binding.ivLoginBackArrow.setOnClickListener{
-            this@LocationFragment.findNavController().popBackStack()
-        }
-
-        binding.btnStopLiveLocation.setOnClickListener {
-            stopLocationUpdates()
-            stopLocationService()
-            showToast("Live location stopped")
-        }
-
-        val firstName = authViewModel.auth.currentUser?.displayName
-            ?.split(" ")
-            ?.firstOrNull()
-            ?.replaceFirstChar { it.uppercase() }
-        "$firstName's Phone".also { binding.tvLocationUsername.text = it }
     }
 
     private fun checkPermissionsAndStart() {
@@ -165,10 +155,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         requireActivity().startService(intent)
     }
 
-    private fun stopLocationService() {
-        val intent = Intent(requireContext(), LocationService::class.java)
-        requireActivity().stopService(intent)
-    }
 
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
@@ -201,6 +187,7 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        checkPermissionsAndStart()
     }
 
     override fun onDestroyView() {
@@ -208,6 +195,7 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         stopLocationUpdates()
         _binding = null
     }
+
     private fun startStopTimer() {
         handler.postDelayed({
             if (isStopped) {
@@ -245,7 +233,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
         lastLatLng = newLatLng
     }
-
 
 
     private fun animateMarker() {

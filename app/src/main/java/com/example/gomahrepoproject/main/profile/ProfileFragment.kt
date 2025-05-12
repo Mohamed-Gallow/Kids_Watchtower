@@ -48,6 +48,7 @@ class ProfileFragment : Fragment() {
                 authViewModel.logout()
                 val intent = Intent(requireContext(),AuthActivity::class.java)
                 requireContext().startActivity(intent)
+                requireActivity().finish()
             }
         }
 

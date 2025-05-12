@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentRegisterBinding
 import com.example.gomahrepoproject.ui.MainActivity
@@ -17,6 +18,7 @@ class RegisterFragment : Fragment() {
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
     private val authViewModel: AuthViewModel by viewModels()
+    private val args: RegisterFragmentArgs by navArgs()
 
 
     override fun onCreateView(
@@ -36,6 +38,7 @@ class RegisterFragment : Fragment() {
 
     private fun initButtons() {
         binding.btnRegister.setOnClickListener {
+            val role = args.role
             val email = binding.etRegisterEmail.text.toString().trim()
             val password = binding.etRegisterPassword.text.toString()
             val confirmPassword = binding.etConfirmPassword.text.toString()
@@ -44,7 +47,7 @@ class RegisterFragment : Fragment() {
             } else if (password != confirmPassword) {
                 showToast("match password field with confirm field")
             } else {
-                authViewModel.register(email, password,"parent")
+                authViewModel.register(email, password, role)
                 this@RegisterFragment.findNavController()
                     .navigate(R.id.action_registerFragment_to_loginFragment)
             }

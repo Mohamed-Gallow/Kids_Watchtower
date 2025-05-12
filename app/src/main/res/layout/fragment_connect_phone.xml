@@ -103,68 +103,43 @@
                 android:background="@color/gray" />
         </LinearLayout>
 
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp"
-            android:layout_marginTop="24dp"
-            android:orientation="horizontal">
+            android:layout_marginHorizontal="26dp"
+            android:layout_marginTop="16sp"
+            android:text="Child E-mail"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/get_your_child_phone" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="Get your child’s phone"
-                android:textColor="@color/lightBlack"
-                android:textSize="16sp" />
-        </LinearLayout>
-
-        <LinearLayout
+        <EditText
+            android:id="@+id/etChildEmailField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp"
-            android:layout_marginTop="6dp"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/qr_code" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="Scan the QR code"
-                android:textColor="@color/lightBlack"
-                android:textSize="16sp" />
-        </LinearLayout>
+            android:layout_marginHorizontal="26dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/curve_bg"
+            android:hint="set child e-mail"
+            android:paddingHorizontal="16sp"
+            android:paddingVertical="12dp"
+            android:textColor="@color/unchecked_bottom_nav_color"
+            android:textSize="14sp"
+            app:backgroundTint="@null" />
 
         <Button
+            android:id="@+id/btnLinkParentWithChild"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="40dp"
             android:layout_marginTop="30dp"
             android:background="@drawable/scan_bg"
-            android:text="Scan"
+            android:text="Link"
             android:textColor="@color/blueGreen"
             android:textSize="17sp"
             app:backgroundTint="@null" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="16dp"
-            android:text="Connect by code"
-            android:textColor="@color/blueGreen"
-            android:textSize="16sp"
-            android:textStyle="bold" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

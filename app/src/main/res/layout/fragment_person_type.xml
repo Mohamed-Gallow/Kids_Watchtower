@@ -50,6 +50,7 @@
                 android:text="To begin using Kids WatchTower, we need to know whose phone you’re setting app"/>
 
             <Button
+                android:id="@+id/btnParent"
                 android:layout_width="match_parent"
                 android:text="Parent"
                 android:layout_marginHorizontal="79dp"
@@ -61,6 +62,7 @@
                 android:layout_height="wrap_content"/>
 
             <Button
+                android:id="@+id/btnChild"
                 android:layout_marginBottom="30dp"
                 android:background="@drawable/child_btn"
                 android:layout_width="match_parent"

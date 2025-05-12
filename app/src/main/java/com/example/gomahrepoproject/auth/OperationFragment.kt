@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentOperationBinding
 import com.example.gomahrepoproject.ui.MainActivity
@@ -40,7 +41,7 @@ class OperationFragment : Fragment() {
         }
         binding.btnSignUp.setOnClickListener {
             this@OperationFragment.findNavController()
-                .navigate(R.id.action_operationFragment_to_registerFragment)
+                .navigate(R.id.action_opreationFragment_to_personTypeFragment2)
         }
     }
 

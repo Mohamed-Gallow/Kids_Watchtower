@@ -54,7 +54,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
                         if (verificationTask.isSuccessful) {
 
-                            // حفظ النوع في  Realtime Database
 
                             val userId = user.uid
                             val userData = mapOf(

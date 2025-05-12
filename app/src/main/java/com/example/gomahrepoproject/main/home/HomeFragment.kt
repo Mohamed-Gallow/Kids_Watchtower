@@ -21,10 +21,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.gomahrepoproject.ChildActivity
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentHomeBinding
 import com.example.gomahrepoproject.main.data.Data
 import com.example.gomahrepoproject.main.location.LocationService
+import com.example.gomahrepoproject.main.location.LocationViewModel
 import com.example.gomahrepoproject.main.profile.ProfileViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -45,7 +47,7 @@ import java.util.Locale
 
 class HomeFragment : Fragment() , OnMapReadyCallback {
     private var _binding: FragmentHomeBinding? = null
-
+    private val locationViewModel: LocationViewModel by viewModels()
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -91,7 +93,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         initCurrentLocation()
 
         val mapFragment =
-            childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
+            childFragmentManager.findFragmentById(R.id.fHomeLocation) as? com.google.android.gms.maps.SupportMapFragment
         mapFragment?.getMapAsync(this)
 
 
@@ -99,10 +101,16 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             findNavController().navigate(R.id.action_homeFragment_to_locationFragment)
         }
 
+        binding.navToChildFragment.setOnClickListener {
+            val intent = Intent(requireContext(), ChildActivity::class.java)
+            requireContext().startActivity(intent)
+        }
+
     }
 
     override fun onMapReady(p0: GoogleMap) {
         googleMap = p0
+        checkPermissionsAndStart()
     }
 
 
@@ -111,9 +119,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         profileViewModel.user.observe(viewLifecycleOwner) { user ->
             binding.headerName.text = user?.displayName ?: ""
         }
-        binding.tvLocationName.setOnClickListener {
-            checkPermissionsAndStart()
-        }
+
 
     }
 
