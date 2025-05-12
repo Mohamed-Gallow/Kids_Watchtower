@@ -1,15 +1,10 @@
 package com.example.gomahrepoproject
 
 import android.Manifest
-import android.animation.ArgbEvaluator
-import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,8 +14,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.gomahrepoproject.auth.AuthViewModel
 import com.example.gomahrepoproject.databinding.FragmentChildLocationBinding
+import com.example.gomahrepoproject.main.location.LocationModel
 import com.example.gomahrepoproject.main.location.LocationService
 import com.example.gomahrepoproject.main.location.LocationViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -36,58 +31,31 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.Polyline
-import com.google.android.gms.maps.model.PolylineOptions
 
 class ChildLocationFragment : Fragment(), OnMapReadyCallback {
-
-
     private var _binding: FragmentChildLocationBinding? = null
     private val binding get() = _binding!!
-    private val authViewModel: AuthViewModel by viewModels()
     private val locationViewModel: LocationViewModel by viewModels()
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var googleMap: GoogleMap
     private var currentMarker: Marker? = null
 
-    private val pathPoints = mutableListOf<LatLng>()
-    private var polyline: Polyline? = null
-
-    private val handler = Handler(Looper.getMainLooper())
-    private var lastLatLng: LatLng? = null
-    private var isStopped = false
-
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            locationViewModel.loadCurrentLocationFromFirebase()
-            locationViewModel.currentLocation.observe(viewLifecycleOwner) { location ->
-                val latLng = LatLng(
-                    (location.first().latitude).toDouble(), (location.first().longitude).toDouble()
+            val location = locationResult.lastLocation ?: return
+            val latLng = LatLng(location.latitude, location.longitude)
+            val locationModel = LocationModel(location.latitude.toString(), location.longitude.toString())
+            locationViewModel.sendCurrentLocationToFirebase(locationModel)
+
+            if (currentMarker == null) {
+                currentMarker = googleMap.addMarker(
+                    MarkerOptions().position(latLng).title("My Location")
                 )
-                Log.e("ChildLocationFragment", "onLocationResult: $latLng")
-
-                if (currentMarker == null) {
-                    currentMarker = googleMap.addMarker(
-                        MarkerOptions().position(latLng).title("My Location")
-                    )
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
-
-                    polyline = googleMap.addPolyline(
-                        PolylineOptions()
-                            .color(ContextCompat.getColor(requireContext(), R.color.blue))
-                            .width(15f)
-                            .geodesic(true)
-                    )
-                } else {
-                    currentMarker?.position = latLng
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
-                }
-
-                pathPoints.add(latLng)
-                polyline?.points = pathPoints
-
-                detectMovement(latLng)
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+            } else {
+                currentMarker?.position = latLng
+                googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
             }
         }
     }
@@ -98,7 +66,7 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
             if (allGranted) {
                 startLocationUpdates()
                 startLocationService()
-                showToast("Live location started")
+                showToast("Location sharing started")
             } else {
                 showToast("All permissions must be granted")
             }
@@ -115,13 +83,21 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        fusedLocationProviderClient =
-            LocationServices.getFusedLocationProviderClient(requireContext())
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
 
-        val mapFragment =
-            childFragmentManager.findFragmentById(R.id.childMap) as? SupportMapFragment
+        val mapFragment = childFragmentManager.findFragmentById(R.id.childMap) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
 
+        locationViewModel.listenForLocationSharing()
+        locationViewModel.isSharingLocation.observe(viewLifecycleOwner) { isSharing ->
+            if (isSharing) {
+                checkPermissionsAndStart()
+            } else {
+                stopLocationUpdates()
+                stopLocationService()
+                showToast("Location sharing stopped")
+            }
+        }
     }
 
     private fun checkPermissionsAndStart() {
@@ -146,7 +122,7 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
         } else {
             startLocationUpdates()
             startLocationService()
-            showToast("Live location started")
+            showToast("Location sharing started")
         }
     }
 
@@ -155,6 +131,10 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
         requireActivity().startService(intent)
     }
 
+    private fun stopLocationService() {
+        val intent = Intent(requireContext(), LocationService::class.java)
+        requireActivity().stopService(intent)
+    }
 
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
@@ -187,77 +167,11 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        checkPermissionsAndStart()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         stopLocationUpdates()
         _binding = null
-    }
-
-    private fun startStopTimer() {
-        handler.postDelayed({
-            if (isStopped) {
-                animateMarker()
-                animatePolylineColor()
-            }
-        }, 5000)
-    }
-
-    private fun detectMovement(newLatLng: LatLng) {
-        if (lastLatLng == null) {
-            lastLatLng = newLatLng
-            startStopTimer()
-            return
-        }
-
-        val distance = FloatArray(1)
-        android.location.Location.distanceBetween(
-            lastLatLng!!.latitude,
-            lastLatLng!!.longitude,
-            newLatLng.latitude,
-            newLatLng.longitude,
-            distance
-        )
-
-        if (distance[0] < 2) {
-            if (!isStopped) {
-                isStopped = true
-                startStopTimer()
-            }
-        } else {
-            isStopped = false
-            handler.removeCallbacksAndMessages(null)
-        }
-
-        lastLatLng = newLatLng
-    }
-
-
-    private fun animateMarker() {
-        currentMarker?.let { marker ->
-            val animator = ValueAnimator.ofFloat(0f, 20f, 0f)
-            animator.duration = 1000
-            animator.addUpdateListener {
-                val value = it.animatedValue as Float
-                marker.setAnchor(0.5f, 1f + value / 100)
-            }
-            animator.start()
-        }
-    }
-
-    private fun animatePolylineColor() {
-        polyline?.let { polyline ->
-            val colorFrom = ContextCompat.getColor(requireContext(), R.color.blue)
-            val colorTo = ContextCompat.getColor(requireContext(), R.color.red)
-
-            val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
-            colorAnimation.duration = 2000
-            colorAnimation.addUpdateListener { animator ->
-                polyline.color = animator.animatedValue as Int
-            }
-            colorAnimation.start()
-        }
     }
 }
