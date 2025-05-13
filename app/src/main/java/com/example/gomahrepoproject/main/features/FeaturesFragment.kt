@@ -37,6 +37,24 @@ class FeaturesFragment : Fragment() {
             this@FeaturesFragment.findNavController()
                 .navigate(R.id.action_featuresFragment_to_childLinkFragment)
         }
+        binding.btnNavToLocation.setOnClickListener {
+            this@FeaturesFragment.findNavController()
+                .navigate(R.id.action_featuresFragment_to_locationFragment2)
+        }
+        binding.btnNavToAppBlock.setOnClickListener {
+            this@FeaturesFragment.findNavController()
+                .navigate(R.id.action_featuresFragment_to_blockAppsFragment)
+        }
+        binding.btnNavToSecurityLog.setOnClickListener {
+            this@FeaturesFragment.findNavController()
+                .navigate(R.id.action_featuresFragment_to_secuLogFragment)
+        }
+    }
+
+    private fun initLockDevice() {
+        binding.btnLockDevice.setOnClickListener {
+
+        }
     }
 
     override fun onDestroyView() {

@@ -1,7 +1,8 @@
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="109dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/curve_white_8"
     android:orientation="horizontal"
     app:cardCornerRadius="8dp"
     app:cardElevation="8dp">
@@ -29,6 +30,7 @@
 
             <TextView
                 android:layout_width="match_parent"
+                android:textColor="@color/lightBlack"
                 android:layout_height="wrap_content"
                 android:text="Mohammed Phone"
                 android:textSize="14sp" />
@@ -48,6 +50,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/lightBlack"
                     android:layout_marginHorizontal="4dp"
                     android:text="Active" />
 
@@ -58,8 +61,10 @@
                     android:src="@drawable/charge_ic" />
 
                 <TextView
+                    android:id="@+id/tvCurrentCharge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textColor="@color/lightBlack"
                     android:layout_marginHorizontal="4dp"
                     android:text="60%" />
             </LinearLayout>
@@ -69,4 +74,4 @@
     </LinearLayout>
 
 
-</androidx.cardview.widget.CardView>
+</LinearLayout>

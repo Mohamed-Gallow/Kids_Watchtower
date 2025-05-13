@@ -34,6 +34,15 @@
         <action
             android:id="@+id/action_featuresFragment_to_childLinkFragment"
             app:destination="@id/childLinkFragment" />
+        <action
+            android:id="@+id/action_featuresFragment_to_locationFragment2"
+            app:destination="@id/locationFragment" />
+        <action
+            android:id="@+id/action_featuresFragment_to_blockAppsFragment"
+            app:destination="@id/blockAppsFragment" />
+        <action
+            android:id="@+id/action_featuresFragment_to_secuLogFragment"
+            app:destination="@id/secuLogFragment" />
     </fragment>
     <fragment
         android:id="@+id/profileFragment"
@@ -44,14 +53,7 @@
         android:id="@+id/connectPhoneFragment"
         android:name="com.example.gomahrepoproject.main.link.ConnectPhoneFragment"
         android:label="fragment_connect_phone"
-        tools:layout="@layout/fragment_connect_phone" >
-        <action
-            android:id="@+id/action_connectPhoneFragment_to_featuresFragment"
-            app:destination="@id/featuresFragment" />
-        <action
-            android:id="@+id/action_connectPhoneFragment_to_featuresFragment2"
-            app:destination="@id/featuresFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_connect_phone" />
     <fragment
         android:id="@+id/childNameFragment"
         android:name="com.example.gomahrepoproject.main.link.ChildNameFragment"
@@ -71,22 +73,10 @@
         android:id="@+id/locationFragment"
         android:name="com.example.gomahrepoproject.main.location.LocationFragment"
         android:label="fragment_location"
-        tools:layout="@layout/fragment_location" >
-        <action
-            android:id="@+id/action_locationFragment_to_homeFragment"
-            app:destination="@id/homeFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out"
-            app:popEnterAnim="@android:anim/fade_in"
-            app:popExitAnim="@android:anim/fade_out" />
-    </fragment>
+        tools:layout="@layout/fragment_location" />
     <fragment
         android:id="@+id/childLinkFragment"
         android:name="com.example.gomahrepoproject.main.link.ChildLinkFragment"
         android:label="fragment_child_link"
-        tools:layout="@layout/fragment_child_link" >
-        <action
-            android:id="@+id/action_childLinkFragment_to_featuresFragment"
-            app:destination="@id/featuresFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_child_link" />
 </navigation>

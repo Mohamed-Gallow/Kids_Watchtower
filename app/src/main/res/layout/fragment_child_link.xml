@@ -14,6 +14,7 @@
         android:layout_marginTop="100dp"
         android:text="No pending requests"
         android:textColor="@color/lightBlack"
+        android:textStyle="bold"
         android:textSize="18sp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,30 +24,38 @@
         android:id="@+id/etVerificationCode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="26dp"
+        android:layout_marginHorizontal="24dp"
         android:layout_marginTop="20dp"
         android:background="@drawable/curve_bg"
         android:hint="Enter verification code"
         android:paddingHorizontal="16sp"
-        android:paddingVertical="12dp"
-        android:textColor="@color/unchecked_bottom_nav_color"
+        android:paddingVertical="16dp"
+        android:textColor="@color/lightBlack"
         android:textSize="14sp"
         app:layout_constraintTop_toBottomOf="@id/tvPendingRequest"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
-        android:id="@+id/btnAcceptRequest"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="40dp"
+        android:layout_marginHorizontal="32dp"
         android:layout_marginTop="20dp"
-        android:background="@drawable/scan_bg"
-        android:text="Accept Request"
-        android:textColor="@color/blueGreen"
-        android:textSize="17sp"
-        app:layout_constraintTop_toBottomOf="@id/etVerificationCode"
+        android:background="@drawable/login_btn_bg"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/etVerificationCode">
+
+        <TextView
+            android:id="@+id/btnAcceptRequest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingVertical="12dp"
+            android:textStyle="bold"
+            android:text="Accept Request"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

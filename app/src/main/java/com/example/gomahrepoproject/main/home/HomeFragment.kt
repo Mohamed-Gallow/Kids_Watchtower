@@ -3,9 +3,13 @@ package com.example.gomahrepoproject.main.home
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -17,16 +21,15 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.registerReceiver
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gomahrepoproject.ChildActivity
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentHomeBinding
 import com.example.gomahrepoproject.main.data.Data
 import com.example.gomahrepoproject.main.location.LocationService
-import com.example.gomahrepoproject.main.location.LocationViewModel
 import com.example.gomahrepoproject.main.profile.ProfileViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -45,9 +48,13 @@ import com.google.android.gms.maps.model.PolylineOptions
 import java.util.Locale
 
 
+@Suppress("DEPRECATION")
 class HomeFragment : Fragment() , OnMapReadyCallback {
     private var _binding: FragmentHomeBinding? = null
-    private val locationViewModel: LocationViewModel by viewModels()
+    private val binding get() = _binding!!
+
+
+    private lateinit var batteryReceiver: BroadcastReceiver
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -61,7 +68,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             }
         }
 
-    private val binding get() = _binding!!
+
     private lateinit var recentAdapter: RecentAdapter
     private val profileViewModel : ProfileViewModel by viewModels()
     private lateinit var googleMap: GoogleMap
@@ -79,7 +86,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
@@ -87,6 +94,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initSpinnerItem()
         initAdapters()
         manageTime()
         initViews()
@@ -97,9 +105,6 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         mapFragment?.getMapAsync(this)
 
 
-        binding.txtSee.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_locationFragment)
-        }
 
         binding.navToChildFragment.setOnClickListener {
             val intent = Intent(requireContext(), ChildActivity::class.java)
@@ -170,7 +175,6 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                     val addressList =
                         geocoder.getFromLocation(location.latitude, location.longitude, 1)
 
-                    // عرض العنوان في واجهة المستخدم
                     binding.tvLocationName.text = if (!addressList.isNullOrEmpty()) {
                         val address = addressList[0]
                         val village = address.subLocality ?: ""
@@ -181,18 +185,42 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                         "Unknown Location"
                     }
                 } else {
-                    // في حال فشل الحصول على الموقع
-                    binding.tvLocationName.text = "Unable to get location"
+
+                    "Unable to get location".also { binding.tvLocationName.text = it }
                 }
             }
         } else {
-            // إذا لم يكن لديك إذن للوصول إلى الموقع، اطلب الإذن من المستخدم
             ActivityCompat.requestPermissions(
                 requireActivity(),
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 1
             )
         }
+    }
+
+    private fun initSpinnerItem() {
+        val devices = mutableListOf(DeviceModel("Mohammed Phone", 60)) // Initial data
+        binding.userSpinner.adapter = SpinnerAdapter(requireContext(), devices)
+
+        // Battery Receiver to update Spinner data
+        batteryReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val batteryLevel = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val batteryScale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+                val batteryPct = if (batteryLevel != -1 && batteryScale != -1) {
+                    (batteryLevel * 100 / batteryScale.toFloat()).toInt()
+                } else {
+                    0
+                }
+
+                // Update the first device's battery level (assuming it's the current phone)
+                devices[0].batteryLevel = batteryPct
+                (binding.userSpinner.adapter as SpinnerAdapter).notifyDataSetChanged()
+            }
+        }
+
+        // Register receiver
+        requireContext().registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
     }
 
     private fun manageTime() {
@@ -218,7 +246,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             distance
         )
 
-        if (distance[0] < 2) { // يعتبر انه واقف لو اقل من 2 متر
+        if (distance[0] < 2) {
             if (!isStopped) {
                 isStopped = true
                 startStopTimer()
@@ -294,7 +322,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                 animateMarker()
                 animatePolylineColor()
             }
-        }, 5000) // انتظر 5 ثواني
+        }, 5000)
     }
 
     private fun animateMarker() {
@@ -313,10 +341,10 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         polyline?.let { polyline ->
             val colorFrom = ContextCompat.getColor(requireContext(), R.color.blue)
             val colorTo =
-                ContextCompat.getColor(requireContext(), R.color.red) // تأكد أن عندك اللون الأحمر
+                ContextCompat.getColor(requireContext(), R.color.red)
 
             val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
-            colorAnimation.duration = 2000 // 2 ثواني
+            colorAnimation.duration = 2000
             colorAnimation.addUpdateListener { animator ->
                 polyline.color = animator.animatedValue as Int
             }
@@ -348,6 +376,11 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        try {
+            requireContext().unregisterReceiver(batteryReceiver)
+        } catch (e: IllegalArgumentException) {
+            // Receiver was not registered (safe to ignore)
+        }
         _binding = null
     }
 

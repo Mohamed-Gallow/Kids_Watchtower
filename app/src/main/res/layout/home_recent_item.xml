@@ -6,12 +6,13 @@
     android:layout_marginHorizontal="6dp"
     android:layout_marginTop="4dp">
 
-    <androidx.cardview.widget.CardView
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_margin="4dp"
+        android:background="@drawable/curve_white_8"
         app:cardElevation="2dp"
         android:layout_height="match_parent"
-        app:cardCornerRadius="8dp">
+        android:elevation="1dp">
 
         <LinearLayout
             android:gravity="center"
@@ -56,5 +57,5 @@
                 android:textColor="@color/gray"
                 android:textSize="12sp"/>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -64,13 +64,13 @@
             android:orientation="vertical">
 
 
-            <androidx.cardview.widget.CardView
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
                 android:layout_marginTop="42dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                android:background="@drawable/curve_white_8"
+                android:elevation="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -92,7 +92,7 @@
                         android:textColor="@color/lightBlack"
                         android:text="Continue with google"/>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -127,6 +127,7 @@
                 android:layout_width="match_parent"
                 android:inputType="textEmailAddress"
                 android:layout_height="wrap_content"
+                android:textColor="@color/black"
                 android:lines="1"
                 android:layout_marginHorizontal="34dp"
                 android:textSize="14sp"
@@ -139,6 +140,7 @@
                 android:id="@+id/etRegisterPassword"
                 android:layout_width="match_parent"
                 android:inputType="textPassword"
+                android:textColor="@color/black"
                 android:layout_height="wrap_content"
                 android:lines="1"
                 android:layout_marginHorizontal="34dp"
@@ -155,6 +157,7 @@
                 android:inputType="textPassword"
                 android:layout_height="wrap_content"
                 android:lines="1"
+                android:textColor="@color/black"
                 android:layout_marginHorizontal="34dp"
                 android:textSize="14sp"
                 android:layout_marginTop="10sp"
@@ -164,24 +167,6 @@
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="14dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="34dp"
-                android:layout_marginTop="10dp">
-
-                <CheckBox
-                    android:id="@+id/cbRememberMe"
-                    android:layout_width="0dp"
-                    android:buttonTint="@drawable/checkbox_selector"
-                    android:layout_height="wrap_content"
-                    android:backgroundTint="@color/gray2"
-                    android:textSize="12sp"
-                    android:textColor="@color/gray4"
-                    android:layout_weight="1"
-                    android:text="remember me" />
-
-            </LinearLayout>
 
             <Button
                 android:id="@+id/btnRegister"
@@ -189,8 +174,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="34dp"
                 android:textSize="17sp"
+                android:layout_marginTop="16dp"
                 android:textStyle="bold"
-                android:layout_marginTop="10dp"
+                android:textColor="@color/white"
                 android:background="@drawable/login_btn_bg"
                 android:text="Register"
                 app:backgroundTint="@null" />

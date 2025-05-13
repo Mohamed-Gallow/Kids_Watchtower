@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.gomahrepoproject.main.location.UserDataModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -40,7 +41,7 @@ class LinkViewModel(application: Application) : AndroidViewModel(application) {
                 if (snapshot.exists()) {
                     val childNode = snapshot.children.first()
                     val childId = childNode.key ?: return
-                    val childData = childNode.getValue(UserData::class.java)
+                    val childData = childNode.getValue(UserDataModel::class.java)
                     Log.d(TAG, "Child found: ID=$childId, Data=$childData")
 
                     if (childData?.role != "child") {
@@ -133,8 +134,3 @@ class LinkViewModel(application: Application) : AndroidViewModel(application) {
         const val TAG = "LinkViewModel"
     }
 }
-
-data class UserData(
-    val email: String = "",
-    val role: String = ""
-)

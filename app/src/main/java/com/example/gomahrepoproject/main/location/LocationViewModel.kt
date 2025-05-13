@@ -17,9 +17,6 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     private val usersRef = database.getReference("users")
     private val locationsRef = database.getReference("locations")
 
-    private var _currentLocation = MutableLiveData<List<LocationModel>>()
-    val currentLocation: LiveData<List<LocationModel>> get() = _currentLocation
-
     private var _childLocation = MutableLiveData<LocationModel>()
     val childLocation: LiveData<LocationModel> get() = _childLocation
 
@@ -38,7 +35,10 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     fun requestChildLocationSharing(childId: String) {
         if (userId == null) return
         usersRef.child(childId).child("locationSharing").setValue(
-            mapOf("isSharing" to true, "targetUserId" to userId)
+            mapOf(
+                "isSharing" to true,
+                "targetUserId" to userId
+            )
         ).addOnCompleteListener {
             Log.d(TAG, "Location sharing requested")
         }.addOnFailureListener {
@@ -48,7 +48,10 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
 
     fun stopChildLocationSharing(childId: String) {
         usersRef.child(childId).child("locationSharing").setValue(
-            mapOf("isSharing" to false, "targetUserId" to "")
+            mapOf(
+                "isSharing" to false,
+                "targetUserId" to ""
+            )
         ).addOnCompleteListener {
             Log.d(TAG, "Location sharing stopped")
         }
@@ -59,7 +62,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
             override fun onDataChange(snapshot: DataSnapshot) {
                 val location = snapshot.getValue(LocationModel::class.java)
                 if (location != null) {
-                    _childLocation.value = location
+                    _childLocation.value = location!!
                 }
             }
 
