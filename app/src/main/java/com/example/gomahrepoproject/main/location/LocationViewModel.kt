@@ -32,6 +32,21 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun listenForChildLocation(childId: String) {
+        locationsRef.child(childId).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val location = snapshot.getValue(LocationModel::class.java)
+                if (location != null) {
+                    _childLocation.value = location!!
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error fetching child location: ${error.message}")
+            }
+        })
+    }
+
     fun requestChildLocationSharing(childId: String) {
         if (userId == null) return
         usersRef.child(childId).child("locationSharing").setValue(
@@ -55,21 +70,6 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
         ).addOnCompleteListener {
             Log.d(TAG, "Location sharing stopped")
         }
-    }
-
-    fun listenForChildLocation(childId: String) {
-        locationsRef.child(childId).addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val location = snapshot.getValue(LocationModel::class.java)
-                if (location != null) {
-                    _childLocation.value = location!!
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error fetching child location: ${error.message}")
-            }
-        })
     }
 
     fun listenForLocationSharing() {

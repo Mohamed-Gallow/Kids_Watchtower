@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/childLocationFragment"
-        android:name="com.example.gomahrepoproject.ChildLocationFragment"
+        android:name="com.example.gomahrepoproject.main.location.ChildLocationFragment"
         android:label="fragment_child_location"
         tools:layout="@layout/fragment_child_location" />
 </navigation>

@@ -8,10 +8,8 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import com.example.gomahrepoproject.R
 
-class SpinnerAdapter(
-    context: Context,
-    private val devices: List<DeviceModel>
-) : ArrayAdapter<DeviceModel>(context, R.layout.spinner_item, devices) { // Use your spinner_item layout
+class SpinnerAdapter(context: Context, private val devices: List<DeviceModel>) :
+    ArrayAdapter<DeviceModel>(context, R.layout.spinner_item, devices) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view = convertView ?: LayoutInflater.from(context)
@@ -24,6 +22,6 @@ class SpinnerAdapter(
     }
 
     override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-        return getView(position, convertView, parent) // Reuse the same layout for dropdown
+        return getView(position, convertView, parent)
     }
 }

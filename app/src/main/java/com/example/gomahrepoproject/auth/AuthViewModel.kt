@@ -60,11 +60,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                             )
                             firebaseRef.child(userId).setValue(userData)
                                 .addOnCompleteListener {
-                                    Log.d(TAG, "User data saved: $userData")
                                     _errorMessage.value = "Registered successfully, check your email for verification."
                                 }
                                 .addOnFailureListener {
-                                    Log.e(TAG, "Failed to save user data: ${it.message}")
                                     _errorMessage.value = "Registration successful, but failed to save user data."
                                 }
                         } else {

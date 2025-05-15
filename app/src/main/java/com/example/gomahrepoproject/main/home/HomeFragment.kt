@@ -379,7 +379,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         try {
             requireContext().unregisterReceiver(batteryReceiver)
         } catch (e: IllegalArgumentException) {
-            // Receiver was not registered (safe to ignore)
+            e.printStackTrace()
         }
         _binding = null
     }

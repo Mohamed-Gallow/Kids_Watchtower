@@ -6,5 +6,3 @@ import androidx.lifecycle.AndroidViewModel
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
 }
-
-// FireRepository --> viewModel -->

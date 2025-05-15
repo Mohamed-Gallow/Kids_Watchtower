@@ -1,4 +1,4 @@
-package com.example.gomahrepoproject
+package com.example.gomahrepoproject.main.location
 
 import android.Manifest
 import android.content.Intent
@@ -14,10 +14,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentChildLocationBinding
-import com.example.gomahrepoproject.main.location.LocationModel
-import com.example.gomahrepoproject.main.location.LocationService
-import com.example.gomahrepoproject.main.location.LocationViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
