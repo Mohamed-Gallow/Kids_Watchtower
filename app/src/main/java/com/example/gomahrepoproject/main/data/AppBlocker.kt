@@ -1,5 +1,9 @@
 package com.example.gomahrepoproject.main.data
 
-data class AppBlocker (
-    private val app:String
+import android.graphics.drawable.Drawable
+
+data class AppBlocker(
+    val name: String,
+    val packageName: String,
+    val icon: Drawable
 )

@@ -22,12 +22,14 @@
             android:scaleType="centerCrop"
             android:src="@drawable/facebook_icon"/>
         </androidx.cardview.widget.CardView>
+
         <TextView
+            android:id="@+id/tvAppName"
             android:layout_width="wrap_content"
-            android:textSize="10sp"
-            android:textColor="@color/black"
             android:layout_height="wrap_content"
-            android:text="facebook"/>
+            android:text="facebook"
+            android:textColor="@color/black"
+            android:textSize="10sp" />
 
     </LinearLayout>
 
@@ -46,9 +48,9 @@
         android:src="@drawable/plus"
         app:tint="@color/white"
         android:padding="3dp"/>
-    
 
-    
-    
-    
+
+
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

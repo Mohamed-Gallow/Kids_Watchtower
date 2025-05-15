@@ -1,62 +1,70 @@
 package com.example.gomahrepoproject.main.blockapps
 
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.R
 
-class BlockAppsFragment : Fragment(R.layout.fragment_block_apps) {
+class BlockAppsFragment : Fragment() {
 
     private val viewModel: BlockedAppsViewModel by viewModels()
-    private var blockedApps: List<String> = emptyList() // Store blocked apps list
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    private lateinit var rvBlockedApps: RecyclerView
+    private lateinit var rvUnblockedApps: RecyclerView
 
-        val userId = "USER_ID" // Replace with actual user ID غيرهم انت بقى ما تتفزلكش
-        val childId = "CHILD_ID" // Replace with actual child ID
+    private lateinit var blockedAppsAdapter: BlockAppAdapter
+    private lateinit var unblockedAppsAdapter: BlockAppAdapter
 
-        viewModel.initialize(requireContext())
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_block_apps, container, false)
+        rvBlockedApps = view.findViewById(R.id.rvBlockedApps)
+        rvUnblockedApps = view.findViewById(R.id.rvUnblockedApps)
 
-        // Observe blocked apps from ViewModel
+        setupRecyclerViews()
+        observeViewModel()
+
+        return view
+    }
+
+    private fun setupRecyclerViews() {
+        blockedAppsAdapter = BlockAppAdapter { app ->
+            viewModel.unblockApp(app.packageName)
+            Toast.makeText(requireContext(), "Unblocked: ${app.appName}", Toast.LENGTH_SHORT).show()
+        }
+
+        unblockedAppsAdapter = BlockAppAdapter { app ->
+            viewModel.blockApp(app.packageName)
+            Toast.makeText(requireContext(), "Blocked: ${app.appName}", Toast.LENGTH_SHORT).show()
+        }
+
+        rvBlockedApps.apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
+            adapter = blockedAppsAdapter
+        }
+
+        rvUnblockedApps.apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
+            adapter = unblockedAppsAdapter
+        }
+    }
+
+    private fun observeViewModel() {
         viewModel.blockedApps.observe(viewLifecycleOwner, Observer { apps ->
-            blockedApps = apps // Update blocked apps list
-            Log.d("BlockedApps", "Blocked Apps List: $apps")
+            blockedAppsAdapter.submitList(apps)
         })
 
-        // Load blocked apps for the given user & child
-        viewModel.loadBlockedApps(userId, childId)
-
-        // Start monitoring running apps
-        viewModel.startMonitoringApps { appPackage: String ->  // Explicit type
-            Log.d("BlockedApps", "Detected app: $appPackage")
-
-            if (blockedApps.contains(appPackage)) {
-                val appName = getAppNameFromPackage(appPackage) // Get app name
-                showBlockScreen(appName) // Pass app name to block screen
-            }
-        }
-    }
-
-    private fun showBlockScreen(blockedApp: String) {
-        val intent = Intent(requireContext(), BlockedAppActivity::class.java)
-        intent.putExtra("BLOCKED_APP_NAME", blockedApp)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-    }
-
-    private fun getAppNameFromPackage(packageName: String): String {
-        val packageManager = requireContext().packageManager
-        return try {
-            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationLabel(applicationInfo).toString()
-        } catch (e: PackageManager.NameNotFoundException) {
-            packageName // Return package name if not found
-        }
+        viewModel.unblockedApps.observe(viewLifecycleOwner, Observer { apps ->
+            unblockedAppsAdapter.submitList(apps)
+        })
     }
 }
