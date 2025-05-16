@@ -26,8 +26,6 @@ class AppUsageTracker(private val context: Context) {
         val endTime = System.currentTimeMillis()
         val startTime = endTime - 5000 // Check the last 5 seconds
 
-
-
         val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
         var lastEvent: UsageEvents.Event? = null
 

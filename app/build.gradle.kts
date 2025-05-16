@@ -65,6 +65,7 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation(libs.play.services.location)
 
     // LiveData and Lifecycle
     val lifecycle_ver = "2.8.7"
