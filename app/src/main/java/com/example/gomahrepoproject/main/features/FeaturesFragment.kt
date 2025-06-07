@@ -39,7 +39,7 @@ class FeaturesFragment : Fragment() {
         }
         binding.btnNavToLocation.setOnClickListener {
             this@FeaturesFragment.findNavController()
-                .navigate(R.id.action_featuresFragment_to_locationFragment2)
+                .navigate(R.id.action_featuresFragment_to_locationFragment)
         }
         binding.btnNavToAppBlock.setOnClickListener {
             this@FeaturesFragment.findNavController()
@@ -62,15 +62,4 @@ class FeaturesFragment : Fragment() {
         _binding = null
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        // Find the button in your fragment layout
-        val blockAppsButton: Button = view.findViewById(R.id.btn_block_apps)
-
-        // Navigate to BlockAppsFragment when the button is clicked
-        blockAppsButton.setOnClickListener {
-            findNavController().navigate(R.id.action_featuresFragment_to_blockAppsFragment)
-        }
-    }
 }
