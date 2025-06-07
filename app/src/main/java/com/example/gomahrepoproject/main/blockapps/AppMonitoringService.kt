@@ -14,39 +14,24 @@ import com.google.firebase.database.*
 class AppMonitoringService : Service() {
 
     private val handler = Handler()
-    private val checkInterval: Long = 2000 // 2 seconds
+    private val checkInterval: Long = 2000
     private lateinit var database: DatabaseReference
     private val auth = FirebaseAuth.getInstance()
     private var childId: String? = null
+    private var blockedPackages: Set<String> = emptySet()
 
     override fun onCreate() {
         super.onCreate()
         database = FirebaseDatabase.getInstance().reference
-        fetchChildIdAndStartMonitoring()
-    }
-
-    private fun fetchChildIdAndStartMonitoring() {
         val userId = auth.currentUser?.uid ?: return
-        val userRef = database.child("users").child(userId)
 
+        val userRef = database.child("users").child(userId)
         userRef.child("role").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                when (snapshot.getValue(String::class.java)) {
-                    "child" -> {
-                        childId = userId
-                        startMonitoring()
-                    }
-                    "parent" -> {
-                        userRef.child("linkedAccounts").child("childId")
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(snapshot: DataSnapshot) {
-                                    childId = snapshot.getValue(String::class.java)
-                                    startMonitoring()
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {}
-                            })
-                    }
+                if (snapshot.getValue(String::class.java) == "child") {
+                    childId = userId
+                    listenForBlockedApps()
+                    startMonitoring()
                 }
             }
 
@@ -54,11 +39,29 @@ class AppMonitoringService : Service() {
         })
     }
 
+    private fun listenForBlockedApps() {
+        val cid = childId ?: return
+        database.child("users").child(cid).child("blockedApps")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    blockedPackages = snapshot.children.mapNotNull {
+                        it.getValue(String::class.java)
+                    }.toSet()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("AppMonitoringService", "Failed to read blocked apps: ${error.message}")
+                }
+            })
+    }
+
     private fun startMonitoring() {
         handler.post(object : Runnable {
             override fun run() {
                 val foregroundApp = getForegroundApp()
-                checkBlockedApp(foregroundApp)
+                if (foregroundApp in blockedPackages) {
+                    showBlockScreen(foregroundApp!!)
+                }
                 handler.postDelayed(this, checkInterval)
             }
         })
@@ -69,47 +72,20 @@ class AppMonitoringService : Service() {
         val endTime = System.currentTimeMillis()
         val startTime = endTime - 5000
 
-        val usageStatsList = usageStatsManager.queryUsageStats(
+        val stats = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY, startTime, endTime
         )
 
-        var currentApp: UsageStats? = null
-        for (usageStats in usageStatsList) {
-            if (currentApp == null || usageStats.lastTimeUsed > currentApp.lastTimeUsed) {
-                currentApp = usageStats
-            }
-        }
-
-        return currentApp?.packageName
-    }
-
-    private fun checkBlockedApp(packageName: String?) {
-        if (packageName == null || childId == null) return
-
-        database.child("users").child(childId!!).child("blockedApps")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val blockedApps = snapshot.children.mapNotNull {
-                        it.getValue(String::class.java)
-                    }
-
-                    if (blockedApps.contains(packageName)) {
-                        showBlockScreen(packageName)
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("AppMonitoringService", "Error reading blocked apps: ${error.message}")
-                }
-            })
+        return stats.maxByOrNull { it.lastTimeUsed }?.packageName
     }
 
     private fun showBlockScreen(blockedApp: String) {
         val intent = Intent(this, BlockedAppActivity::class.java)
         intent.putExtra("BLOCKED_APP_NAME", blockedApp)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         startActivity(intent)
     }
+
 
     override fun onBind(intent: Intent?): IBinder? = null
 }

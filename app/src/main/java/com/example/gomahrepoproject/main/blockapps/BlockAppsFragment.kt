@@ -11,6 +11,8 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 
 class BlockAppsFragment : Fragment() {
 
@@ -22,6 +24,8 @@ class BlockAppsFragment : Fragment() {
     private lateinit var blockedAppsAdapter: BlockAppAdapter
     private lateinit var unblockedAppsAdapter: BlockAppAdapter
 
+    private var userRole: String? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -29,14 +33,35 @@ class BlockAppsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_block_apps, container, false)
         rvBlockedApps = view.findViewById(R.id.rvBlockedApps)
         rvUnblockedApps = view.findViewById(R.id.rvUnblockedApps)
-
-        setupRecyclerViews()
-        observeViewModel()
-
         return view
     }
 
-    private fun setupRecyclerViews() {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            FirebaseDatabase.getInstance().reference
+                .child("users").child(userId).child("role")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        userRole = snapshot.getValue(String::class.java)
+                        if (userRole == "parent") {
+                            setupRecyclerViewsForParent()
+                        }
+                        observeViewModel()
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        observeViewModel() // Still observe if role check fails
+                    }
+                })
+        } else {
+            observeViewModel()
+        }
+    }
+
+    private fun setupRecyclerViewsForParent() {
         blockedAppsAdapter = BlockAppAdapter { app ->
             viewModel.unblockApp(app.packageName)
             Toast.makeText(requireContext(), "Unblocked: ${app.appName}", Toast.LENGTH_SHORT).show()
@@ -60,11 +85,15 @@ class BlockAppsFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.blockedApps.observe(viewLifecycleOwner, Observer { apps ->
-            blockedAppsAdapter.submitList(apps)
+            if (::blockedAppsAdapter.isInitialized) {
+                blockedAppsAdapter.submitList(apps)
+            }
         })
 
         viewModel.unblockedApps.observe(viewLifecycleOwner, Observer { apps ->
-            unblockedAppsAdapter.submitList(apps)
+            if (::unblockedAppsAdapter.isInitialized) {
+                unblockedAppsAdapter.submitList(apps)
+            }
         })
     }
 }

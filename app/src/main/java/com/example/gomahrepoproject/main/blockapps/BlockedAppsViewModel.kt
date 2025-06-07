@@ -40,17 +40,17 @@ class BlockedAppsViewModel(application: Application) : AndroidViewModel(applicat
                         when (snapshot.getValue(String::class.java)) {
                             "child" -> {
                                 childId = userId
-                                uploadInstalledApps()
-                                listenForBlockedApps()
+                                uploadInstalledApps() // Children only upload their apps
+                                // ❌ No UI interaction for block/unblock
                             }
                             "parent" -> {
-                                databaseRef.child("users").child(userId).child("linkedAccounts").child("childId")
+                                databaseRef.child("users").child(userId)
+                                    .child("linkedAccounts").child("childId")
                                     .addListenerForSingleValueEvent(object : ValueEventListener {
                                         override fun onDataChange(childSnapshot: DataSnapshot) {
                                             childId = childSnapshot.getValue(String::class.java)
                                             childId?.let { listenForBlockedApps() }
                                         }
-
                                         override fun onCancelled(error: DatabaseError) {}
                                     })
                             }
@@ -61,6 +61,7 @@ class BlockedAppsViewModel(application: Application) : AndroidViewModel(applicat
                 })
         }
     }
+
 
     private fun uploadInstalledApps() {
         val pm = getApplication<Application>().packageManager
