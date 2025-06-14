@@ -15,6 +15,7 @@ firebaseMessagingKtx = "24.1.0"
 firebaseDatabase = "21.0.0"
 firebaseMessaging = "24.1.1"
 playServicesLocation = "21.3.0"
+roomRuntimeAndroid = "2.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,6 +31,7 @@ firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messa
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+androidx-room-runtime-android = { group = "androidx.room", name = "room-runtime-android", version.ref = "roomRuntimeAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

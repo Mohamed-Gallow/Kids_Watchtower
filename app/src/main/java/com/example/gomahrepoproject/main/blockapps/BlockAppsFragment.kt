@@ -1,6 +1,8 @@
 package com.example.gomahrepoproject.main.blockapps
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +31,7 @@ class BlockAppsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_block_apps, container, false)
         rvBlockedApps = view.findViewById(R.id.rvBlockedApps)
         rvUnblockedApps = view.findViewById(R.id.rvUnblockedApps)
@@ -39,21 +41,34 @@ class BlockAppsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        if (!isAccessibilityServiceEnabled()) {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            Toast.makeText(
+                requireContext(),
+                "Please enable Accessibility Service to block apps",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             FirebaseDatabase.getInstance().reference
                 .child("users").child(userId).child("role")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        userRole = snapshot.getValue(String::class.java)
-                        if (userRole == "parent") {
-                            setupRecyclerViewsForParent()
+                        val value = snapshot.value
+                        if (value is String) {
+                            userRole = value
+                            if (userRole == "parent") {
+                                setupRecyclerViewsForParent()
+                            }
                         }
                         observeViewModel()
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        observeViewModel() // Still observe if role check fails
+                        observeViewModel()
                     }
                 })
         } else {
@@ -71,6 +86,7 @@ class BlockAppsFragment : Fragment() {
             viewModel.blockApp(app.packageName)
             Toast.makeText(requireContext(), "Blocked: ${app.appName}", Toast.LENGTH_SHORT).show()
         }
+
 
         rvBlockedApps.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
@@ -95,5 +111,15 @@ class BlockAppsFragment : Fragment() {
                 unblockedAppsAdapter.submitList(apps)
             }
         })
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val context = requireContext()
+        val enabledServices = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+
+        return enabledServices.contains("${context.packageName}/${AppMonitoringService::class.java.name}")
     }
 }

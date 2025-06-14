@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.R
+import com.example.gomahrepoproject.main.data.AppModel
 
 class BlockAppAdapter(
     private val onAppClick: (AppModel) -> Unit

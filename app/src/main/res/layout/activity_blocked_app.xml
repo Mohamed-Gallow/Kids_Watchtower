@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/blockedAppLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
-    android:background="@color/red">
+    android:background="#F44336">
 
     <TextView
         android:id="@+id/blockedAppText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="This app is blocked!"
-        android:textSize="24sp"
-        android:textColor="@android:color/white"
-        android:padding="20dp"
-        android:textStyle="bold"/>
-
-    <Button
-        android:id="@+id/btnClose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Close App"
-        android:padding="10dp"
-        android:backgroundTint="@android:color/white"/>
+        android:text="App is blocked"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:padding="24dp"
+        android:textAlignment="center" />
 </LinearLayout>
