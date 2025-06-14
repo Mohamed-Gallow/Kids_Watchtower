@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/white"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    tools:context=".main.seculog.TestSecuFragment">
 
     <!-- Toolbar with back button -->
     <androidx.appcompat.widget.Toolbar
@@ -34,17 +36,17 @@
             android:id="@+id/etUrl"
             android:layout_width="0dp"
             android:layout_height="48dp"
+            android:background="@android:drawable/edit_text"
             android:hint="https://example.com"
-            android:inputType="textUri"
             android:imeOptions="actionGo"
+            android:inputType="textUri"
             android:minHeight="48dp"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:background="@android:drawable/edit_text"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/btnGo"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <Button
             android:id="@+id/btnGo"
@@ -54,9 +56,9 @@
             android:minWidth="64dp"
             android:text="GO"
             android:textColor="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- WebView Container with weight for proper sizing -->
@@ -65,5 +67,6 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:visibility="visible"/>
+        android:visibility="visible" />
 </LinearLayout>
+

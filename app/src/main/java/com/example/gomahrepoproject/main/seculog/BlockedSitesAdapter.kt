@@ -1,9 +1,8 @@
-package com.example.gomahrepoproject
+package com.example.gomahrepoproject.main.seculog
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.gomahrepoproject.databinding.ActivityMainBinding
 import com.example.gomahrepoproject.databinding.ItemBlockedSiteBinding
 
 class BlockedSitesAdapter(
