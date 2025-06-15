@@ -58,12 +58,13 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     private lateinit var googleMap: GoogleMap
 
     private var childMarker: Marker? = null
+    private var childId: String? = null
     private val pathPoints = mutableListOf<LatLng>()
     private var polyline: Polyline? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastLatLng: LatLng? = null
     private var isStopped = false
-    private var childId: String? = null
+    private var isFirstLocationUpdate = true
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -239,9 +240,13 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                         .width(15f)
                         .geodesic(true)
                 )
+                isFirstLocationUpdate = false
             } else {
                 childMarker?.position = childLatLng
-                googleMap.moveCamera(CameraUpdateFactory.newLatLng(childLatLng))
+                if (isFirstLocationUpdate) {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                    isFirstLocationUpdate = false
+                }
             }
             pathPoints.add(childLatLng)
             polyline?.points = pathPoints
