@@ -168,7 +168,6 @@
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="12dp"
                         android:layout_marginVertical="10dp"
-                        android:text="PSG- Paris Saint German - PARIS"
                         android:textColor="@color/gray"
                         android:textSize="12sp"/>
                 </LinearLayout>
