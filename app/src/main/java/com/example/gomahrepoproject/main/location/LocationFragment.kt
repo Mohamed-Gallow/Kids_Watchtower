@@ -62,6 +62,7 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var isChild = false
+    private var isSharingLocation = false
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -111,11 +112,24 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
                     if (role == "child") {
                         isChild = true
                         childId = userId // Child tracks their own location
-                        // Ensure location sharing is enabled
+                        // Check if already sharing
                         FirebaseDatabase.getInstance().getReference("users").child(userId)
-                            .child("locationSharing").child("isSharing").setValue(true)
-                        locationViewModel.listenForChildLocation(childId!!)
-                        checkPermissionsAndStart()
+                            .child("locationSharing").child("isSharing")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(sharingSnapshot: DataSnapshot) {
+                                    isSharingLocation = sharingSnapshot.getValue(Boolean::class.java) ?: false
+                                    if (!isSharingLocation) {
+                                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                                            .child("locationSharing").child("isSharing").setValue(true)
+                                        isSharingLocation = true
+                                    }
+                                    locationViewModel.listenForChildLocation(childId!!)
+                                    checkPermissionsAndStart()
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error checking sharing status: ${error.message}")
+                                }
+                            })
                     } else if (role == "parent") {
                         // Get linked child ID
                         FirebaseDatabase.getInstance().getReference("users").child(userId)
@@ -128,10 +142,9 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
                                         checkPermissionsAndStart()
                                     } else {
                                         showToast("No linked child found. Please link a child account.")
-                                        findNavController().navigate(R.id.action_locationFragment_to_homeFragment)
+                                        findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
                                     }
                                 }
-
                                 override fun onCancelled(error: DatabaseError) {
                                     showToast("Error fetching child ID: ${error.message}")
                                 }
@@ -141,7 +154,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
                         authViewModel.logout()
                     }
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                     showToast("Error fetching role: ${error.message}")
                 }
@@ -161,6 +173,22 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             ?.replaceFirstChar { it.uppercase() }
         if (isChild) {
             "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+            // Add toggle button for location sharing
+
+                if (isSharingLocation) {
+                    isSharingLocation = false
+                    FirebaseDatabase.getInstance().getReference("users").child(childId!!)
+                        .child("locationSharing").child("isSharing").setValue(false)
+                    stopLocationUpdates()
+                    showToast("Stopped sharing location")
+                } else {
+                    isSharingLocation = true
+                    FirebaseDatabase.getInstance().getReference("users").child(childId!!)
+                        .child("locationSharing").child("isSharing").setValue(true)
+                    checkPermissionsAndStart()
+                    showToast("Started sharing location")
+                }
+
         } else {
             // For parent, show child's name if available
             childId?.let { cid ->
@@ -172,7 +200,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
                                 binding.tvLocationUsername.text = it
                             }
                         }
-
                         override fun onCancelled(error: DatabaseError) {
                             "$firstName's Phone".also { binding.tvLocationUsername.text = it }
                         }
@@ -201,10 +228,10 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         if (notGrantedPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(notGrantedPermissions.toTypedArray())
         } else {
-            if (isChild) {
+            if (isChild && isSharingLocation) {
                 startLocationUpdates()
                 showToast("Sharing your location")
-            } else if (childId != null) {
+            } else if (!isChild && childId != null) {
                 locationViewModel.requestChildLocationSharing(childId!!)
                 showToast("Child location tracking started")
             }
@@ -220,14 +247,16 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     val latLng = LatLng(location.latitude, location.longitude)
-                    FirebaseDatabase.getInstance().getReference("locations").child(childId!!)
-                        .setValue(mapOf(
-                            "latitude" to location.latitude.toString(),
-                            "longitude" to location.longitude.toString(),
-                            "timestamp" to System.currentTimeMillis()
-                        )).addOnFailureListener {
-                            showToast("Failed to update location: ${it.message}")
-                        }
+                    if (isChild && isSharingLocation) {
+                        FirebaseDatabase.getInstance().getReference("locations").child(childId!!)
+                            .setValue(mapOf(
+                                "latitude" to location.latitude.toString(),
+                                "longitude" to location.longitude.toString(),
+                                "timestamp" to System.currentTimeMillis()
+                            )).addOnFailureListener {
+                                showToast("Failed to update location: ${it.message}")
+                            }
+                    }
                 }
             }
         }
@@ -243,10 +272,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
     private fun stopLocationUpdates() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
-        if (isChild && childId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(childId!!)
-                .child("locationSharing").child("isSharing").setValue(false)
-        }
     }
 
     private fun showToast(message: String) {
@@ -354,9 +379,15 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        if (isChild) {
+        // Do not stop location updates for child to keep sharing in background
+        _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Only stop updates if the app is fully closed (optional, can be removed for persistent sharing)
+        if (isChild && !isSharingLocation) {
             stopLocationUpdates()
         }
-        _binding = null
     }
 }
