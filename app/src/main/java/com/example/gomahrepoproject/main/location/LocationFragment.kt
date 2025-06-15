@@ -59,14 +59,21 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     private var isStopped = false
     private var isFirstLocationUpdate = true
 
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    private var isChild = false
+
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allGranted = permissions.all { it.value }
             if (allGranted) {
-                if (childId != null) {
+                if (isChild) {
+                    startLocationUpdates()
+                    showToast("Sharing your location")
+                } else if (childId != null) {
                     locationViewModel.requestChildLocationSharing(childId!!)
+                    showToast("Child location tracking started")
                 }
-                showToast("Child location tracking started")
             } else {
                 showToast("All permissions must be granted")
             }
@@ -86,27 +93,49 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
         mapFragment?.getMapAsync(this)
 
-        // Get child ID from Firebase
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
+        // Get user role from Firebase
         val userId = authViewModel.auth.currentUser?.uid
         if (userId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(userId).child("linkedAccounts").child("childId")
+            FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        childId = snapshot.getValue(String::class.java)
-                        if (childId != null) {
-                            locationViewModel.listenForChildLocation(childId!!)
+                        val role = snapshot.getValue(String::class.java)
+                        if (role == "child") {
+                            isChild = true
+                            childId = userId // Child tracks their own location
                             checkPermissionsAndStart()
+                        } else if (role == "parent") {
+                            // Get linked child ID
+                            FirebaseDatabase.getInstance().getReference("users").child(userId)
+                                .child("linkedAccounts").child("childId")
+                                .addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(snapshot: DataSnapshot) {
+                                        childId = snapshot.getValue(String::class.java)
+                                        if (childId != null) {
+                                            locationViewModel.listenForChildLocation(childId!!)
+                                            checkPermissionsAndStart()
+                                        } else {
+                                            showToast("No linked child found")
+                                        }
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {
+                                        showToast("Error fetching child ID: ${error.message}")
+                                    }
+                                })
                         } else {
-                            showToast("No linked child found")
+                            showToast("Invalid user role")
                         }
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        showToast("Error fetching child ID: ${error.message}")
+                        showToast("Error fetching role: ${error.message}")
                     }
                 })
         } else {
-            showToast("Parent not authenticated")
+            showToast("User not authenticated")
         }
 
         initViews()
@@ -144,11 +173,42 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         if (notGrantedPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(notGrantedPermissions.toTypedArray())
         } else {
-            if (childId != null) {
+            if (isChild) {
+                startLocationUpdates()
+                showToast("Sharing your location")
+            } else if (childId != null) {
                 locationViewModel.requestChildLocationSharing(childId!!)
+                showToast("Child location tracking started")
             }
-            showToast("Child location tracking started")
         }
+    }
+
+    private fun startLocationUpdates() {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setMinUpdateIntervalMillis(2000)
+            .build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    FirebaseDatabase.getInstance().getReference("locations").child(childId!!)
+                        .setValue(mapOf("latitude" to location.latitude.toString(), "longitude" to location.longitude.toString()))
+                }
+            }
+        }
+
+        if (ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 
     private fun showToast(message: String) {
@@ -256,6 +316,9 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        if (isChild) {
+            stopLocationUpdates()
+        }
         _binding = null
     }
 }
