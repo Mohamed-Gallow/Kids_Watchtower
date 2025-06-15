@@ -155,11 +155,28 @@
                         app:cardCornerRadius="6dp"
                         app:cardElevation="0dp">
 
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
                         <fragment
                             android:id="@+id/fHomeLocation"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:name="com.google.android.gms.maps.SupportMapFragment" />
+
+                            <ImageView
+                                android:id="@+id/sharingImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/location_active_image"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                android:visibility="gone" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
                     </androidx.cardview.widget.CardView>
 
                     <TextView
