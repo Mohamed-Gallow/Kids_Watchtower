@@ -95,48 +95,57 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
 
-        // Get user role from Firebase
-        val userId = authViewModel.auth.currentUser?.uid
-        if (userId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val role = snapshot.getValue(String::class.java)
-                        if (role == "child") {
-                            isChild = true
-                            childId = userId // Child tracks their own location
-                            checkPermissionsAndStart()
-                        } else if (role == "parent") {
-                            // Get linked child ID
-                            FirebaseDatabase.getInstance().getReference("users").child(userId)
-                                .child("linkedAccounts").child("childId")
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(snapshot: DataSnapshot) {
-                                        childId = snapshot.getValue(String::class.java)
-                                        if (childId != null) {
-                                            locationViewModel.listenForChildLocation(childId!!)
-                                            checkPermissionsAndStart()
-                                        } else {
-                                            showToast("No linked child found")
-                                        }
-                                    }
-
-                                    override fun onCancelled(error: DatabaseError) {
-                                        showToast("Error fetching child ID: ${error.message}")
-                                    }
-                                })
-                        } else {
-                            showToast("Invalid user role")
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        showToast("Error fetching role: ${error.message}")
-                    }
-                })
-        } else {
-            showToast("User not authenticated")
+        // Check authentication and email verification
+        val user = authViewModel.auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            showToast("Please log in and verify your email")
+            return
         }
+
+        val userId = user.uid
+        // Get user role from Firebase
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val role = snapshot.getValue(String::class.java)
+                    if (role == "child") {
+                        isChild = true
+                        childId = userId // Child tracks their own location
+                        // Ensure location sharing is enabled
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("locationSharing").child("isSharing").setValue(true)
+                        locationViewModel.listenForChildLocation(childId!!)
+                        checkPermissionsAndStart()
+                    } else if (role == "parent") {
+                        // Get linked child ID
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("linkedAccounts").child("childId")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    childId = snapshot.getValue(String::class.java)
+                                    if (childId != null) {
+                                        locationViewModel.listenForChildLocation(childId!!)
+                                        checkPermissionsAndStart()
+                                    } else {
+                                        showToast("No linked child found. Please link a child account.")
+                                        findNavController().navigate(R.id.action_locationFragment_to_homeFragment)
+                                    }
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error fetching child ID: ${error.message}")
+                                }
+                            })
+                    } else {
+                        showToast("Invalid user role. Please register with a valid role.")
+                        authViewModel.logout()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching role: ${error.message}")
+                }
+            })
 
         initViews()
     }
@@ -150,7 +159,26 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             ?.split(" ")
             ?.firstOrNull()
             ?.replaceFirstChar { it.uppercase() }
-        "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+        if (isChild) {
+            "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+        } else {
+            // For parent, show child's name if available
+            childId?.let { cid ->
+                FirebaseDatabase.getInstance().getReference("users").child(cid).child("displayName")
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val childName = snapshot.getValue(String::class.java)
+                            "${childName?.replaceFirstChar { it.uppercase() } ?: "Child"}'s Phone".also {
+                                binding.tvLocationUsername.text = it
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+                        }
+                    })
+            } ?: "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+        }
     }
 
     private fun checkPermissionsAndStart() {
@@ -193,7 +221,13 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
                 locationResult.lastLocation?.let { location ->
                     val latLng = LatLng(location.latitude, location.longitude)
                     FirebaseDatabase.getInstance().getReference("locations").child(childId!!)
-                        .setValue(mapOf("latitude" to location.latitude.toString(), "longitude" to location.longitude.toString()))
+                        .setValue(mapOf(
+                            "latitude" to location.latitude.toString(),
+                            "longitude" to location.longitude.toString(),
+                            "timestamp" to System.currentTimeMillis()
+                        )).addOnFailureListener {
+                            showToast("Failed to update location: ${it.message}")
+                        }
                 }
             }
         }
@@ -209,6 +243,10 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
 
     private fun stopLocationUpdates() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        if (isChild && childId != null) {
+            FirebaseDatabase.getInstance().getReference("users").child(childId!!)
+                .child("locationSharing").child("isSharing").setValue(false)
+        }
     }
 
     private fun showToast(message: String) {

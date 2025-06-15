@@ -96,6 +96,9 @@
         <action
             android:id="@+id/action_locationFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_locationFragment_to_connectPhoneFragment"
+            app:destination="@id/connectPhoneFragment" />
     </fragment>
     <fragment
         android:id="@+id/childLinkFragment"
