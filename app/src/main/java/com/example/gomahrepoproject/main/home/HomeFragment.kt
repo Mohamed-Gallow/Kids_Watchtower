@@ -183,7 +183,6 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                                     locationViewModel.listenForChildLocation(childId!!)
                                     checkPermissionsAndStart()
                                 }
-
                                 override fun onCancelled(error: DatabaseError) {
                                     showToast("Error checking sharing status: ${error.message}")
                                 }
@@ -200,10 +199,9 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                                         checkPermissionsAndStart()
                                     } else {
                                         showToast("No linked child found. Please link a child account.")
-                                       findNavController().navigate(R.id.action_homeFragment_to_connectPhoneFragment)
+                                        findNavController().navigate(R.id.action_homeFragment_to_connectPhoneFragment)
                                     }
                                 }
-
                                 override fun onCancelled(error: DatabaseError) {
                                     showToast("Error fetching child ID: ${error.message}")
                                 }
@@ -213,7 +211,6 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                         FirebaseAuth.getInstance().signOut()
                     }
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                     showToast("Error fetching role: ${error.message}")
                 }
@@ -231,6 +228,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         }
 
         if (isChild) {
+
             if (isSharingLocation) {
                 isSharingLocation = false
                 isLocationSharingActive = false
@@ -250,6 +248,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                     showToast("Please enable location services in device settings")
                 }
             }
+
         }
     }
 
@@ -354,19 +353,23 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     }
 
     private fun initCurrentLocation() {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
-                    val addressList =
-                        geocoder.getFromLocation(location.latitude, location.longitude, 1)
-
+        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
+            val lat = location.latitude.toDoubleOrNull() ?: run {
+                binding.tvLocationName.text = "Child location unavailable"
+                return@observe
+            }
+            val lng = location.longitude.toDoubleOrNull() ?: run {
+                binding.tvLocationName.text = "Child location unavailable"
+                return@observe
+            }
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                try {
+                    val addressList = geocoder.getFromLocation(lat, lng, 1)
                     binding.tvLocationName.text = if (!addressList.isNullOrEmpty()) {
                         val address = addressList[0]
                         val village = address.subLocality ?: ""
@@ -376,9 +379,12 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                     } else {
                         "Unknown Location"
                     }
-                } else {
-                    "Unable to get location".also { binding.tvLocationName.text = it }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Geocoding failed: ${e.message}")
+                    binding.tvLocationName.text = "Unable to get address"
                 }
+            } else {
+                binding.tvLocationName.text = "Location permission denied"
             }
         }
     }
