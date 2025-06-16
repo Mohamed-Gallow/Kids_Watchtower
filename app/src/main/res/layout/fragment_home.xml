@@ -182,7 +182,7 @@
                     <TextView
                         android:id="@+id/tvLocationName"
                         android:layout_width="wrap_content"
-                        android:text="elsahel "
+                        android:visibility="visible"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="12dp"
                         android:layout_marginVertical="10dp"
