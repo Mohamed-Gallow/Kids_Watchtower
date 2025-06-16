@@ -11,13 +11,15 @@
         android:layout_height="match_parent"
         android:background="@color/backgroundWhite" />
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
+        android:fillViewport="true"
         android:layout_height="match_parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:minHeight="1000dp">
 
             <LinearLayout
                 android:id="@+id/header_title"
@@ -34,7 +36,6 @@
                     android:text="Hello "
                     android:textColor="@color/lightBlack"
                     android:textSize="20sp"
-
                     android:textStyle="bold" />
 
                 <TextView
@@ -67,7 +68,6 @@
                     android:textSize="20sp" />
 
                 <TextView
-
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="...!"
@@ -135,17 +135,16 @@
                         android:layout_marginTop="12dp"
                         android:layout_height="wrap_content">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:textColor="@color/lightBlack"
-                        android:layout_height="wrap_content"
-                        android:text="Current Location"
-                        android:textSize="16dp"
-                        android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:textColor="@color/lightBlack"
+                            android:layout_height="wrap_content"
+                            android:text="Current Location"
+                            android:textSize="16dp"
+                            android:textStyle="bold" />
 
                     </LinearLayout>
-
 
                     <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
@@ -159,11 +158,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent">
 
-                        <fragment
-                            android:id="@+id/fHomeLocation"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:name="com.google.android.gms.maps.SupportMapFragment" />
+                            <fragment
+                                android:id="@+id/fHomeLocation"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:name="com.google.android.gms.maps.SupportMapFragment" />
 
                             <ImageView
                                 android:id="@+id/sharingImage"
@@ -183,6 +182,7 @@
                     <TextView
                         android:id="@+id/tvLocationName"
                         android:layout_width="wrap_content"
+                        android:text="elsahel "
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="12dp"
                         android:layout_marginVertical="10dp"
@@ -234,6 +234,7 @@
                 android:orientation="horizontal"
                 android:gravity="center"
                 app:layout_constraintTop_toBottomOf="@id/textTodayLayer">
+
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:orientation="vertical"
@@ -262,7 +263,6 @@
 
                 </LinearLayout>
 
-
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -286,16 +286,18 @@
                     android:layout_marginEnd="25dp"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/icManageTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginHorizontal="8dp"
-                    app:tint="@color/black"
-                    android:backgroundTint="@color/white"
-                    android:contentDescription="TODO"
-                    android:src="@drawable/manage_time" />
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/icManageTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginHorizontal="8dp"
+                        app:tint="@color/black"
+                        android:backgroundTint="@color/white"
+                        android:contentDescription="TODO"
+                        android:src="@drawable/manage_time" />
+
                     <TextView
                         android:layout_marginTop="4dp"
                         android:textAlignment="center"
@@ -308,10 +310,10 @@
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_height="0dp"
                 android:background="@drawable/recent_activities_layout"
                 android:elevation="7dp"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/screenTimeLayer">
@@ -336,9 +338,10 @@
 
                     <LinearLayout
                         android:layout_width="wrap_content"
-                        android:orientation="vertical"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="30dp">
+                        android:layout_marginEnd="30dp"
+                        android:orientation="vertical">
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -346,38 +349,30 @@
                             android:textColor="@color/blueGreen"
                             android:textSize="12sp"
                             android:textStyle="bold" />
+
                         <View
-                            android:background="@color/blueGreen"
                             android:layout_width="match_parent"
-                            android:translationY="-2dp"
-                            android:layout_height="1dp"/>
+                            android:layout_height="1dp"
+                            android:background="@color/blueGreen"
+                            android:translationY="-2dp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recentRecyclerview"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0dp"
                     android:layout_marginHorizontal="20dp"
-                    android:layout_marginTop="47dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintBottom_toTopOf="@id/bottomViewMargin"
-                    tools:listitem="@layout/home_recent_item"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"/>
-
-                <View
-                    android:id="@+id/bottomViewMargin"
-                    android:layout_width="match_parent"
-                    android:layout_height="15dp"
-                    android:background="@color/white"
+                    android:nestedScrollingEnabled="false"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/textRecentActivityLayer"
+                    tools:listitem="@layout/home_recent_item" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
-
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
