@@ -26,16 +26,29 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.messaging.FirebaseMessaging
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
 
 class LocationService : Service() {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var childId: String? = null
     private var isLocationEnabled = false
+    private var parentFcmToken: String? = null
 
     companion object {
         private const val TAG = "LocationService"
         private const val NOTIFICATION_ID = 1
+        private const val FCM_API_URL = "https://fcm.googleapis.com/fcm/send"
+        private const val SERVER_KEY = "YOUR_FCM_SERVER_KEY" // Replace with your FCM server key
     }
 
     private val locationRequest by lazy {
@@ -47,12 +60,16 @@ class LocationService : Service() {
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
+                val wasEnabled = isLocationEnabled
                 isLocationEnabled = isLocationEnabled()
-                if (!isLocationEnabled) {
+                if (!isLocationEnabled && wasEnabled) {
                     stopLocationUpdates()
+                    updateLocationStatus(false)
+                    sendFcmNotificationToParent("Child's location services disabled")
                     Log.d(TAG, "Location services disabled, updates stopped")
-                } else {
+                } else if (isLocationEnabled && !wasEnabled) {
                     startLocationUpdates()
+                    updateLocationStatus(true)
                     Log.d(TAG, "Location services enabled, updates started")
                 }
             }
@@ -75,30 +92,71 @@ class LocationService : Service() {
         }
 
         val userId = user.uid
+        // Store FCM token
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                FirebaseDatabase.getInstance().getReference("users").child(userId).child("fcmToken")
+                    .setValue(token)
+            }
+        }
+
         FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val role = snapshot.getValue(String::class.java)
                     if (role == "child") {
                         childId = userId
-                        isLocationEnabled = isLocationEnabled()
-                        if (isLocationEnabled) {
-                            startForegroundService()
-                            startLocationUpdates()
-                        } else {
-                            Log.d(TAG, "Location services disabled, waiting for enable")
-                        }
+                        // Fetch parent's FCM token
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("linkedAccounts").child("parentId")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(parentSnapshot: DataSnapshot) {
+                                    val parentId = parentSnapshot.getValue(String::class.java)
+                                    if (parentId != null) {
+                                        FirebaseDatabase.getInstance().getReference("users").child(parentId)
+                                            .child("fcmToken")
+                                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                                override fun onDataChange(tokenSnapshot: DataSnapshot) {
+                                                    parentFcmToken = tokenSnapshot.getValue(String::class.java)
+                                                    startServiceOperations()
+                                                }
+                                                override fun onCancelled(error: DatabaseError) {
+                                                    Log.e(TAG, "Error fetching parent FCM token: ${error.message}")
+                                                    stopSelf()
+                                                }
+                                            })
+                                    } else {
+                                        Log.e(TAG, "No linked parent found")
+                                        stopSelf()
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    Log.e(TAG, "Error fetching parent ID: ${error.message}")
+                                    stopSelf()
+                                }
+                            })
                     } else {
                         Log.d(TAG, "Not a child user, stopping service")
                         stopSelf()
                     }
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                     Log.e(TAG, "Error fetching role: ${error.message}")
                     stopSelf()
                 }
             })
+    }
+
+    private fun startServiceOperations() {
+        isLocationEnabled = isLocationEnabled()
+        if (isLocationEnabled) {
+            startForegroundService()
+            startLocationUpdates()
+        } else {
+            startForegroundService()
+            Log.d(TAG, "Location services disabled, waiting for enable")
+        }
     }
 
     private fun startForegroundService() {
@@ -111,11 +169,7 @@ class LocationService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                 startForeground(NOTIFICATION_ID, notification)
             } else {
                 Log.e(TAG, "Notification permission not granted")
@@ -134,15 +188,13 @@ class LocationService : Service() {
                     val locationModel = LocationModel(
                         latitude = location.latitude.toString(),
                         longitude = location.longitude.toString(),
-                        timestamp = System.currentTimeMillis()
+                        timestamp = System.currentTimeMillis(),
+                        locationEnabled = true
                     )
                     FirebaseDatabase.getInstance().getReference("locations").child(childId!!)
                         .setValue(locationModel)
                         .addOnSuccessListener {
-                            Log.d(
-                                TAG,
-                                "Location updated: ${location.latitude}, ${location.longitude}"
-                            )
+                            Log.d(TAG, "Location updated: ${location.latitude}, ${location.longitude}")
                         }
                         .addOnFailureListener {
                             Log.e(TAG, "Failed to update location: ${it.message}")
@@ -151,20 +203,10 @@ class LocationService : Service() {
             }
         }
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
+            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
         } else {
             Log.e(TAG, "Location permissions not granted")
             stopSelf()
@@ -176,6 +218,42 @@ class LocationService : Service() {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
         }
         Log.d(TAG, "Location updates stopped")
+    }
+
+    private fun updateLocationStatus(enabled: Boolean) {
+        childId?.let {
+            FirebaseDatabase.getInstance().getReference("locations").child(it)
+                .child("locationEnabled").setValue(enabled)
+        }
+    }
+
+    private fun sendFcmNotificationToParent(message: String) {
+        parentFcmToken?.let { token ->
+            val client = OkHttpClient()
+            val json = JSONObject().apply {
+                put("to", token)
+                put("notification", JSONObject().apply {
+                    put("title", "Location Status Update")
+                    put("body", message)
+                })
+            }
+            val body = json.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+            val request = Request.Builder()
+                .url(FCM_API_URL)
+                .post(body)
+                .addHeader("Authorization", "key=$SERVER_KEY")
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, "Failed to send FCM notification: ${e.message}")
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    Log.d(TAG, "FCM notification sent: ${response.body?.string()}")
+                }
+            })
+        }
     }
 
     private fun isLocationEnabled(): Boolean {
