@@ -20,6 +20,8 @@ class BlockedAppsViewModel : ViewModel() {
     private val _unblockedApps = MutableLiveData<List<AppModel>>()
     val unblockedApps: LiveData<List<AppModel>> = _unblockedApps
 
+    private var cachedApps: List<AppModel> = emptyList()
+
     init {
         fetchLinkedChildAndApps()
     }
@@ -58,8 +60,8 @@ class BlockedAppsViewModel : ViewModel() {
                             app?.copy(isBlocked = blockedSet.contains(app.packageName))
                         }
 
-                        _blockedApps.value = allApps.filter { it.isBlocked }
-                        _unblockedApps.value = allApps.filter { !it.isBlocked }
+                        cachedApps = allApps
+                        updateAppLists()
                     }
 
                     override fun onCancelled(error: DatabaseError) {}
@@ -70,15 +72,34 @@ class BlockedAppsViewModel : ViewModel() {
         })
     }
 
+    private fun updateAppLists() {
+        _blockedApps.value = cachedApps.filter { it.isBlocked }
+        _unblockedApps.value = cachedApps.filter { !it.isBlocked }
+    }
+
     fun blockApp(packageName: String) {
         val child = childId ?: return
         val safeName = packageName.replace(".", ",")
-        database.child("users").child(child).child("blockedApps").child(safeName).setValue(true)
+        database.child("users").child(child).child("blockedApps").child(safeName)
+            .setValue(true)
+            .addOnSuccessListener {
+                cachedApps = cachedApps.map {
+                    if (it.packageName == packageName) it.copy(isBlocked = true) else it
+                }
+                updateAppLists()
+            }
     }
 
     fun unblockApp(packageName: String) {
         val child = childId ?: return
         val safeName = packageName.replace(".", ",")
-        database.child("users").child(child).child("blockedApps").child(safeName).removeValue()
+        database.child("users").child(child).child("blockedApps").child(safeName)
+            .removeValue()
+            .addOnSuccessListener {
+                cachedApps = cachedApps.map {
+                    if (it.packageName == packageName) it.copy(isBlocked = false) else it
+                }
+                updateAppLists()
+            }
     }
 }

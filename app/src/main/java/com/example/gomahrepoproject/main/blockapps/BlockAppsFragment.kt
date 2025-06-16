@@ -41,16 +41,6 @@ class BlockAppsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        if (!isAccessibilityServiceEnabled()) {
-            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            startActivity(intent)
-            Toast.makeText(
-                requireContext(),
-                "Please enable Accessibility Service to block apps",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             FirebaseDatabase.getInstance().reference
@@ -62,6 +52,9 @@ class BlockAppsFragment : Fragment() {
                             userRole = value
                             if (userRole == "parent") {
                                 setupRecyclerViewsForParent()
+                            } else if (userRole == "child") {
+                                AppUploader.uploadInstalledAppsToFirebase(requireContext())
+                                checkAndPromptAccessibilityPermission()
                             }
                         }
                         observeViewModel()
@@ -76,6 +69,18 @@ class BlockAppsFragment : Fragment() {
         }
     }
 
+    private fun checkAndPromptAccessibilityPermission() {
+        if (!isAccessibilityServiceEnabled()) {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            Toast.makeText(
+                requireContext(),
+                "Please enable Accessibility Service to block apps",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     private fun setupRecyclerViewsForParent() {
         blockedAppsAdapter = BlockAppAdapter { app ->
             viewModel.unblockApp(app.packageName)
@@ -87,16 +92,11 @@ class BlockAppsFragment : Fragment() {
             Toast.makeText(requireContext(), "Blocked: ${app.appName}", Toast.LENGTH_SHORT).show()
         }
 
+        rvBlockedApps.layoutManager = GridLayoutManager(requireContext(), 3)
+        rvBlockedApps.adapter = blockedAppsAdapter
 
-        rvBlockedApps.apply {
-            layoutManager = GridLayoutManager(requireContext(), 3)
-            adapter = blockedAppsAdapter
-        }
-
-        rvUnblockedApps.apply {
-            layoutManager = GridLayoutManager(requireContext(), 3)
-            adapter = unblockedAppsAdapter
-        }
+        rvUnblockedApps.layoutManager = GridLayoutManager(requireContext(), 3)
+        rvUnblockedApps.adapter = unblockedAppsAdapter
     }
 
     private fun observeViewModel() {
