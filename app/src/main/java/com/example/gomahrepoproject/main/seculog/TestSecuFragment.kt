@@ -26,6 +26,7 @@ class TestSecuFragment : Fragment() {
     private val blockedSites = mutableListOf<String>()
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private var blockedSitesListener: ValueEventListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,22 +43,19 @@ class TestSecuFragment : Fragment() {
 
         // Initialize views
         webView = view.findViewById(R.id.webView) ?: run {
-            Toast.makeText(requireContext(), "WebView initialization failed", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(requireContext(), "WebView initialization failed", Toast.LENGTH_LONG).show()
             parentFragmentManager.popBackStack()
             return null
         }
 
         etUrl = view.findViewById(R.id.etUrl) ?: run {
-            Toast.makeText(requireContext(), "URL input initialization failed", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(requireContext(), "URL input initialization failed", Toast.LENGTH_LONG).show()
             parentFragmentManager.popBackStack()
             return null
         }
 
         val btnGo: Button = view.findViewById(R.id.btnGo) ?: run {
-            Toast.makeText(requireContext(), "Button initialization failed", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(requireContext(), "Button initialization failed", Toast.LENGTH_LONG).show()
             parentFragmentManager.popBackStack()
             return null
         }
@@ -102,27 +100,38 @@ class TestSecuFragment : Fragment() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val parentId = snapshot.getValue(String::class.java)
                 if (parentId != null) {
-                    // Listen to blocked sites from parent's node
-                    database.getReference("users").child(parentId).child("blockedSites")
-                        .addValueEventListener(object : ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                blockedSites.clear()
-                                for (site in snapshot.children) {
-                                    val url = site.getValue(String::class.java)
-                                    if (url != null) {
-                                        blockedSites.add(url)
-                                    }
+                    val blockedSitesRef = database.getReference("users").child(parentId).child("blockedSites")
+                    blockedSitesListener = object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            blockedSites.clear()
+                            for (site in snapshot.children) {
+                                val url = site.getValue(String::class.java)
+                                if (url != null) {
+                                    blockedSites.add(url)
                                 }
                             }
+                            Toast.makeText(
+                                requireContext(),
+                                "Blocked sites updated: ${blockedSites.size} sites",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
 
-                            override fun onCancelled(error: DatabaseError) {
-                                Toast.makeText(
-                                    requireContext(),
-                                    "Error fetching blocked sites: ${error.message}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        })
+                        override fun onCancelled(error: DatabaseError) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Error fetching blocked sites: ${error.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    blockedSitesRef.addValueEventListener(blockedSitesListener!!)
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "No linked parent account found",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
 
@@ -141,30 +150,24 @@ class TestSecuFragment : Fragment() {
             val url = etUrl?.text.toString().trim()
             when {
                 url.isEmpty() -> {
-                    Toast.makeText(requireContext(), "Please enter a URL", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(requireContext(), "Please enter a URL", Toast.LENGTH_SHORT).show()
                     return
                 }
-
                 isBlocked(url) -> {
-                    Toast.makeText(requireContext(), "This website is blocked!", Toast.LENGTH_LONG)
-                        .show()
+                    Toast.makeText(requireContext(), "This website is blocked!", Toast.LENGTH_LONG).show()
                     return
                 }
-
                 else -> {
-                    val formattedUrl =
-                        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                            "https://$url"
-                        } else {
-                            url
-                        }
+                    val formattedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                        "https://$url"
+                    } else {
+                        url
+                    }
                     webView?.loadUrl(formattedUrl)
                 }
             }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error loading URL: ${e.message}", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(requireContext(), "Error loading URL: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -215,6 +218,18 @@ class TestSecuFragment : Fragment() {
         super.onDestroyView()
         webView = null
         etUrl = null
+        // Remove Firebase listener to prevent memory leaks
+        blockedSitesListener?.let { listener ->
+            database.getReference("users").child(auth.currentUser?.uid ?: "").child("linkedAccounts")
+                .child("parentId").get().addOnSuccessListener { snapshot ->
+                    val parentId = snapshot.getValue(String::class.java)
+                    if (parentId != null) {
+                        database.getReference("users").child(parentId).child("blockedSites")
+                            .removeEventListener(listener)
+                    }
+                }
+        }
+        blockedSitesListener = null
     }
 
     fun onBackPressed(): Boolean {

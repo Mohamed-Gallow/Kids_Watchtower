@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.databinding.ItemBlockedSiteBinding
 
 class BlockedSitesAdapter(
-    private val blockedSites: List<String>,
+    private val blockedSites: MutableList<String>,
     private val onRemoveClicked: (String) -> Unit
 ) : RecyclerView.Adapter<BlockedSitesAdapter.BlockedSitesViewHolder>() {
 
@@ -31,4 +31,10 @@ class BlockedSitesAdapter(
     }
 
     override fun getItemCount() = blockedSites.size
+
+    fun updateSites(newSites: List<String>) {
+        blockedSites.clear()
+        blockedSites.addAll(newSites)
+        notifyDataSetChanged()
+    }
 }
