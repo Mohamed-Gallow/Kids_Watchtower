@@ -56,12 +56,7 @@ class SecuBlockFragment : Fragment() {
         binding.btnBlockUrl.setOnClickListener {
             val url = binding.etWebsiteUrl.text.toString().trim()
             if (url.isNotEmpty()) {
-                val formattedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                    "http://$url"
-                } else {
-                    url
-                }
-
+                val formattedUrl = normalizeUrl(url)
                 if (!blockedSitesList.contains(formattedUrl)) {
                     addBlockedSite(formattedUrl)
                 } else {
@@ -81,8 +76,19 @@ class SecuBlockFragment : Fragment() {
 //        }
     }
 
+    private fun normalizeUrl(url: String): String {
+        var normalized = url.lowercase().trim()
+        if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+            normalized = "https://$normalized"
+        }
+        return normalized.removeSuffix("/")
+    }
+
     private fun listenForBlockedSites() {
-        val parentId = auth.currentUser?.uid ?: return
+        val parentId = auth.currentUser?.uid ?: run {
+            showToast("User not authenticated")
+            return
+        }
         val blockedSitesRef = database.getReference("users").child(parentId).child("blockedSites")
         blockedSitesListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -108,7 +114,10 @@ class SecuBlockFragment : Fragment() {
     }
 
     private fun addBlockedSite(url: String) {
-        val parentId = auth.currentUser?.uid ?: return
+        val parentId = auth.currentUser?.uid ?: run {
+            showToast("User not authenticated")
+            return
+        }
         val blockedSiteRef = database.getReference("users").child(parentId).child("blockedSites").push()
         blockedSiteRef.setValue(url).addOnCompleteListener {
             showToast("Website blocked successfully")
@@ -119,8 +128,14 @@ class SecuBlockFragment : Fragment() {
     }
 
     private fun removeBlockedSite(urlToRemove: String) {
-        val parentId = auth.currentUser?.uid ?: return
-        val key = blockedSitesKeys[urlToRemove] ?: return
+        val parentId = auth.currentUser?.uid ?: run {
+            showToast("User not authenticated")
+            return
+        }
+        val key = blockedSitesKeys[urlToRemove] ?: run {
+            showToast("Website not found in blocked list")
+            return
+        }
         database.getReference("users").child(parentId).child("blockedSites").child(key)
             .removeValue()
             .addOnCompleteListener {
@@ -137,7 +152,6 @@ class SecuBlockFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // Remove Firebase listener to prevent memory leaks
         blockedSitesListener?.let { listener ->
             database.getReference("users").child(auth.currentUser?.uid ?: "").child("blockedSites")
                 .removeEventListener(listener)
