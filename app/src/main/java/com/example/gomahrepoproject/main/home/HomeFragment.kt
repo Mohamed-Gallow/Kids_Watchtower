@@ -9,11 +9,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.LocationManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gomahrepoproject.ChildActivity
 import com.example.gomahrepoproject.R
@@ -29,7 +32,12 @@ import com.example.gomahrepoproject.databinding.FragmentHomeBinding
 import com.example.gomahrepoproject.main.data.Data
 import com.example.gomahrepoproject.main.location.LocationViewModel
 import com.example.gomahrepoproject.main.profile.ProfileViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -58,21 +66,53 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     private lateinit var googleMap: GoogleMap
 
     private var childMarker: Marker? = null
+    private var childId: String? = null
     private val pathPoints = mutableListOf<LatLng>()
     private var polyline: Polyline? = null
     private val handler = Handler(Looper.getMainLooper())
     private var lastLatLng: LatLng? = null
     private var isStopped = false
-    private var childId: String? = null
+    private var isFirstLocationUpdate = true
+
+    private var isChild = false
+    private var isSharingLocation = false
+
+    companion object {
+        private var fusedLocationProviderClient: FusedLocationProviderClient? = null
+        private var locationCallback: LocationCallback? = null
+        private var currentChildId: String? = null
+        private var isLocationSharingActive = false
+        private const val TAG = "HomeFragment"
+    }
+
+    private val locationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
+                if (!isLocationEnabled()) {
+                    stopLocationUpdates()
+                    isSharingLocation = false
+                    isLocationSharingActive = false
+                    currentChildId?.let { childId ->
+                        FirebaseDatabase.getInstance().getReference("users").child(childId)
+                            .child("locationSharing").child("isSharing").setValue(false)
+                    }
+                    showToast("Location services disabled, sharing stopped")
+                }
+            }
+        }
+    }
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allGranted = permissions.all { it.value }
             if (allGranted) {
-                if (childId != null) {
+                if (isChild) {
+                    startLocationUpdates()
+                    showToast("Sharing your location")
+                } else if (childId != null) {
                     locationViewModel.requestChildLocationSharing(childId!!)
+                    showToast("Child location tracking started")
                 }
-                showToast("Child location tracking started")
             } else {
                 showToast("All permissions must be granted")
             }
@@ -97,55 +137,132 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             childFragmentManager.findFragmentById(R.id.fHomeLocation) as? com.google.android.gms.maps.SupportMapFragment
         mapFragment?.getMapAsync(this)
 
+        // Initialize FusedLocationProviderClient if not already
+        if (fusedLocationProviderClient == null) {
+            fusedLocationProviderClient =
+                LocationServices.getFusedLocationProviderClient(requireContext())
+        }
+
+        // Register location services broadcast receiver
+        val filter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
+        requireContext().registerReceiver(locationReceiver, filter)
+
+        // Check authentication and email verification
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !user.isEmailVerified) {
+            showToast("Please log in and verify your email")
+            return
+        }
+
+        val userId = user.uid
+        // Get user role from Firebase
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val role = snapshot.getValue(String::class.java)
+                    if (role == "child") {
+                        isChild = true
+                        childId = userId
+                        currentChildId = userId
+                        // Check if already sharing
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("locationSharing").child("isSharing")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(sharingSnapshot: DataSnapshot) {
+                                    isSharingLocation =
+                                        sharingSnapshot.getValue(Boolean::class.java) ?: false
+                                    isLocationSharingActive = isSharingLocation
+                                    if (!isSharingLocation && isLocationEnabled()) {
+                                        FirebaseDatabase.getInstance().getReference("users")
+                                            .child(userId)
+                                            .child("locationSharing").child("isSharing")
+                                            .setValue(true)
+                                        isSharingLocation = true
+                                        isLocationSharingActive = true
+                                    }
+                                    locationViewModel.listenForChildLocation(childId!!)
+                                    checkPermissionsAndStart()
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error checking sharing status: ${error.message}")
+                                }
+                            })
+                    } else if (role == "parent") {
+                        // Get linked child ID
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("linkedAccounts").child("childId")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    childId = snapshot.getValue(String::class.java)
+                                    if (childId != null) {
+                                        locationViewModel.listenForChildLocation(childId!!)
+                                        checkPermissionsAndStart()
+                                    } else {
+                                        showToast("No linked child found. Please link a child account.")
+                                        findNavController().navigate(R.id.action_homeFragment_to_connectPhoneFragment)
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error fetching child ID: ${error.message}")
+                                }
+                            })
+                    } else {
+                        showToast("Invalid user role. Please register with a valid role.")
+                        FirebaseAuth.getInstance().signOut()
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching role: ${error.message}")
+                }
+            })
+
         binding.navToChildFragment.setOnClickListener {
             val intent = Intent(requireContext(), ChildActivity::class.java)
             requireContext().startActivity(intent)
         }
-
-        // Get child ID from Firebase
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(userId)
-                .child("linkedAccounts").child("childId")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        childId = snapshot.getValue(String::class.java)
-                        if (childId != null) {
-                            locationViewModel.listenForChildLocation(childId!!)
-                            checkPermissionsAndStart()
-                        } else {
-                            showToast("No linked child found")
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        showToast("Error fetching child ID: ${error.message}")
-                    }
-                })
-        } else {
-            showToast("Parent not authenticated")
-        }
-    }
-
-    override fun onMapReady(p0: GoogleMap) {
-        googleMap = p0
-        setupChildLocationObserver()
     }
 
     private fun initViews() {
         profileViewModel.user.observe(viewLifecycleOwner) { user ->
             binding.headerName.text = user?.displayName ?: ""
         }
+
+        if (isChild) {
+
+            if (isSharingLocation) {
+                isSharingLocation = false
+                isLocationSharingActive = false
+                FirebaseDatabase.getInstance().getReference("users").child(childId!!)
+                    .child("locationSharing").child("isSharing").setValue(false)
+                stopLocationUpdates()
+                showToast("Stopped sharing location")
+            } else {
+                if (isLocationEnabled()) {
+                    isSharingLocation = true
+                    isLocationSharingActive = true
+                    FirebaseDatabase.getInstance().getReference("users").child(childId!!)
+                        .child("locationSharing").child("isSharing").setValue(true)
+                    checkPermissionsAndStart()
+                    showToast("Started sharing location")
+                } else {
+                    showToast("Please enable location services in device settings")
+                }
+            }
+
+        }
     }
 
     private fun checkPermissionsAndStart() {
         val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
         )
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
 
         val notGrantedPermissions = permissions.filter {
@@ -158,27 +275,104 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         if (notGrantedPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(notGrantedPermissions.toTypedArray())
         } else {
-            if (childId != null) {
+            if (isChild && isSharingLocation && isLocationEnabled()) {
+                startLocationUpdates()
+                showToast("Sharing your location")
+            } else if (!isChild && childId != null) {
                 locationViewModel.requestChildLocationSharing(childId!!)
+                showToast("Child location tracking started")
             }
-            showToast("Child location tracking started")
+            initCurrentLocation()
         }
     }
 
-    private fun initCurrentLocation() {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+    private fun startLocationUpdates() {
+        if (fusedLocationProviderClient == null || !isLocationEnabled()) return
+
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setMinUpdateIntervalMillis(2000)
+            .build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    if (isChild && isLocationSharingActive && isLocationEnabled()) {
+                        Log.d(TAG, "Updating location: $latLng")
+                        FirebaseDatabase.getInstance().getReference("locations")
+                            .child(currentChildId!!)
+                            .setValue(
+                                mapOf(
+                                    "latitude" to location.latitude.toString(),
+                                    "longitude" to location.longitude.toString(),
+                                    "timestamp" to System.currentTimeMillis()
+                                )
+                            ).addOnFailureListener {
+                                showToast("Failed to update location: ${it.message}")
+                            }
+                    } else if (!isLocationEnabled()) {
+                        stopLocationUpdates()
+                        isSharingLocation = false
+                        isLocationSharingActive = false
+                        currentChildId?.let { childId ->
+                            FirebaseDatabase.getInstance().getReference("users").child(childId)
+                                .child("locationSharing").child("isSharing").setValue(false)
+                        }
+                        showToast("Location services disabled, sharing stopped")
+                    } else {
+                        showToast("not working")
+                    }
+                }
+            }
+        }
 
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
-                    val addressList =
-                        geocoder.getFromLocation(location.latitude, location.longitude, 1)
+            fusedLocationProviderClient!!.requestLocationUpdates(
+                locationRequest,
+                locationCallback!!,
+                Looper.getMainLooper()
+            )
+        }
+    }
 
+    private fun stopLocationUpdates() {
+        locationCallback?.let { callback ->
+            fusedLocationProviderClient?.removeLocationUpdates(callback)
+        }
+        Log.d(TAG, "Location updates stopped")
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager =
+            requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        Log.d(TAG, "Location enabled: $enabled")
+        return enabled
+    }
+
+    private fun initCurrentLocation() {
+        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
+            val lat = location.latitude.toDoubleOrNull() ?: run {
+                binding.tvLocationName.text = "Child location unavailable"
+                return@observe
+            }
+            val lng = location.longitude.toDoubleOrNull() ?: run {
+                binding.tvLocationName.text = "Child location unavailable"
+                return@observe
+            }
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                try {
+                    val addressList = geocoder.getFromLocation(lat, lng, 1)
                     binding.tvLocationName.text = if (!addressList.isNullOrEmpty()) {
                         val address = addressList[0]
                         val village = address.subLocality ?: ""
@@ -188,9 +382,12 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                     } else {
                         "Unknown Location"
                     }
-                } else {
-                    "Unable to get location".also { binding.tvLocationName.text = it }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Geocoding failed: ${e.message}")
+                    binding.tvLocationName.text = "Unable to get address"
                 }
+            } else {
+                binding.tvLocationName.text = "Location permission denied"
             }
         }
     }
@@ -222,6 +419,11 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         }
     }
 
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        setupChildLocationObserver()
+    }
+
     private fun setupChildLocationObserver() {
         locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
             val lat = location.latitude.toDoubleOrNull() ?: return@observe
@@ -239,9 +441,13 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                         .width(15f)
                         .geodesic(true)
                 )
+                isFirstLocationUpdate = false
             } else {
                 childMarker?.position = childLatLng
-                googleMap.moveCamera(CameraUpdateFactory.newLatLng(childLatLng))
+                if (isFirstLocationUpdate) {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                    isFirstLocationUpdate = false
+                }
             }
             pathPoints.add(childLatLng)
             polyline?.points = pathPoints
@@ -328,7 +534,9 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     }
 
     private fun showToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        if (message.isNotEmpty()) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroyView() {
@@ -339,5 +547,10 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             e.printStackTrace()
         }
         _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        requireContext().unregisterReceiver(locationReceiver)
     }
 }

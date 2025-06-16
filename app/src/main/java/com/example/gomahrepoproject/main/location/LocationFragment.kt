@@ -9,12 +9,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -22,12 +22,6 @@ import androidx.navigation.fragment.findNavController
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.auth.AuthViewModel
 import com.example.gomahrepoproject.databinding.FragmentLocationBinding
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -48,7 +42,7 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     private val authViewModel: AuthViewModel by viewModels()
     private val locationViewModel: LocationViewModel by viewModels()
 
-    private lateinit var googleMap: GoogleMap
+    private var googleMap: GoogleMap? = null
     private var childMarker: Marker? = null
     private var childId: String? = null
 
@@ -59,14 +53,23 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     private var isStopped = false
     private var isFirstLocationUpdate = true
 
+    private var isChild = false
+
+    companion object {
+        private const val TAG = "LocationFragment"
+    }
+
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allGranted = permissions.all { it.value }
             if (allGranted) {
-                if (childId != null) {
+                if (isChild) {
+                    startLocationService()
+                    showToast("Location service started")
+                } else if (childId != null) {
                     locationViewModel.requestChildLocationSharing(childId!!)
+                    showToast("Child location tracking started")
                 }
-                showToast("Child location tracking started")
             } else {
                 showToast("All permissions must be granted")
             }
@@ -83,51 +86,88 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
-        mapFragment?.getMapAsync(this)
-
-        // Get child ID from Firebase
-        val userId = authViewModel.auth.currentUser?.uid
-        if (userId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(userId).child("linkedAccounts").child("childId")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        childId = snapshot.getValue(String::class.java)
-                        if (childId != null) {
-                            locationViewModel.listenForChildLocation(childId!!)
-                            checkPermissionsAndStart()
-                        } else {
-                            showToast("No linked child found")
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        showToast("Error fetching child ID: ${error.message}")
-                    }
-                })
-        } else {
-            showToast("Parent not authenticated")
+        // Check authentication and email verification
+        val user = authViewModel.auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            showToast("Please log in and verify your email")
+            findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
+            return
         }
+
+        val userId = user.uid
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val role = snapshot.getValue(String::class.java)
+                    if (role == "child") {
+                        isChild = true
+                        childId = userId
+                        binding.tvLocationUsername.visibility = View.GONE
+                        checkPermissionsAndStart()
+                    } else if (role == "parent") {
+                        isChild = false
+                        // Initialize map for parents
+                        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
+                        mapFragment?.getMapAsync(this@LocationFragment)
+                        // Get linked child ID
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("linkedAccounts").child("childId")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    childId = snapshot.getValue(String::class.java)
+                                    if (childId != null) {
+                                        locationViewModel.listenForChildLocation(childId!!)
+                                        setupChildName()
+                                        checkPermissionsAndStart()
+                                    } else {
+                                        showToast("No linked child found. Please link a child account.")
+                                        findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error fetching child ID: ${error.message}")
+                                }
+                            })
+                    } else {
+                        showToast("Invalid user role. Please register with a valid role.")
+                        authViewModel.logout()
+                        findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching role: ${error.message}")
+                }
+            })
 
         initViews()
     }
 
     private fun initViews() {
         binding.ivLoginBackArrow.setOnClickListener {
-            this@LocationFragment.findNavController().popBackStack()
+            findNavController().popBackStack()
         }
+    }
 
-        val firstName = authViewModel.auth.currentUser?.displayName
-            ?.split(" ")
-            ?.firstOrNull()
-            ?.replaceFirstChar { it.uppercase() }
-        "$firstName's Phone".also { binding.tvLocationUsername.text = it }
+    private fun setupChildName() {
+        childId?.let { cid ->
+            FirebaseDatabase.getInstance().getReference("users").child(cid).child("displayName")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val childName = snapshot.getValue(String::class.java)
+                        binding.tvLocationUsername.text = "${childName?.replaceFirstChar { it.uppercase() } ?: "Child"}'s Phone"
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        binding.tvLocationUsername.text = "Child's Phone"
+                    }
+                })
+        }
     }
 
     private fun checkPermissionsAndStart() {
         val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -135,29 +175,40 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         }
 
         val notGrantedPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                it
-            ) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (notGrantedPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(notGrantedPermissions.toTypedArray())
         } else {
-            if (childId != null) {
+            if (isChild) {
+                startLocationService()
+            } else if (childId != null) {
                 locationViewModel.requestChildLocationSharing(childId!!)
             }
-            showToast("Child location tracking started")
+        }
+    }
+
+    private fun startLocationService() {
+        val intent = Intent(requireContext(), LocationService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent)
+        } else {
+            requireContext().startService(intent)
         }
     }
 
     private fun showToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        if (message.isNotEmpty()) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        setupChildLocationObserver()
+        if (!isChild) {
+            setupChildLocationObserver()
+        }
     }
 
     private fun setupChildLocationObserver() {
@@ -166,12 +217,12 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             val lng = location.longitude.toDoubleOrNull() ?: return@observe
             val childLatLng = LatLng(lat, lng)
             if (childMarker == null) {
-                childMarker = googleMap.addMarker(
+                childMarker = googleMap?.addMarker(
                     MarkerOptions().position(childLatLng).title("Child's Location")
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
                 )
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
-                polyline = googleMap.addPolyline(
+                googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                polyline = googleMap?.addPolyline(
                     PolylineOptions()
                         .color(ContextCompat.getColor(requireContext(), R.color.blue))
                         .width(15f)
@@ -181,7 +232,7 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             } else {
                 childMarker?.position = childLatLng
                 if (isFirstLocationUpdate) {
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                    googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
                     isFirstLocationUpdate = false
                 }
             }
@@ -257,5 +308,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        googleMap = null
     }
 }
