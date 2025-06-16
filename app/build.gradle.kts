@@ -110,5 +110,10 @@ dependencies {
     //firebase ui
     implementation ("com.firebaseui:firebase-ui-auth:8.0.2")
 
+    implementation ("androidx.navigation:navigation-fragment-ktx:2.7.7")
+    implementation ("androidx.navigation:navigation-ui-ktx:2.7.7")
+    implementation ("com.google.firebase:firebase-auth-ktx:23.0.0")
+    implementation ("com.google.firebase:firebase-database-ktx:21.0.0")
+
 
 }

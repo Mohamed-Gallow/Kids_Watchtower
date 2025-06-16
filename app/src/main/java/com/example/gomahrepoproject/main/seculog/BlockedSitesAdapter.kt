@@ -4,9 +4,10 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.databinding.ItemBlockedSiteBinding
+import androidx.recyclerview.widget.DiffUtil
 
 class BlockedSitesAdapter(
-    private val blockedSites: List<String>,
+    private val blockedSites: MutableList<String> = mutableListOf(),
     private val onRemoveClicked: (String) -> Unit
 ) : RecyclerView.Adapter<BlockedSitesAdapter.BlockedSitesViewHolder>() {
 
@@ -31,4 +32,22 @@ class BlockedSitesAdapter(
     }
 
     override fun getItemCount() = blockedSites.size
+
+    fun updateSites(newSites: List<String>) {
+        val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = blockedSites.size
+            override fun getNewListSize() = newSites.size
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+                blockedSites[oldItemPosition] == newSites[newItemPosition]
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+                blockedSites[oldItemPosition] == newSites[newItemPosition]
+        })
+        blockedSites.clear()
+        blockedSites.addAll(newSites)
+        diffResult.dispatchUpdatesTo(this)
+    }
 }
+
+
+
+
