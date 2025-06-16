@@ -78,7 +78,6 @@
             <ImageView
                 android:layout_width="33dp"
                 android:layout_height="33dp"
-                android:layout_marginHorizontal="4dp"
                 android:src="@drawable/device_management"/>
             <TextView
                 android:layout_width="wrap_content"

@@ -46,7 +46,7 @@ class BlockAppAdapter(
             }
 
             // Optional: change icon color to indicate status
-            val indicatorRes = if (app.isBlocked) R.drawable.ic_blocked else R.drawable.circle_bg
+            val indicatorRes = if (app.isBlocked) R.drawable.remove_btn else R.drawable.add_app_btn
             statusIndicator.setImageResource(indicatorRes)
 
             itemView.setOnClickListener {

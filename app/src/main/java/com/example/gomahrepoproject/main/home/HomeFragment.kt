@@ -268,9 +268,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun manageTime() {
-        binding.icManageTime.setOnClickListener {
-            // Implement time management logic
-        }
+
     }
 
     override fun onMapReady(map: GoogleMap) {
