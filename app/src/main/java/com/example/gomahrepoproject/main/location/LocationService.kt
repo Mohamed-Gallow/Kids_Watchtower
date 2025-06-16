@@ -1,86 +1,203 @@
 package com.example.gomahrepoproject.main.location
 
 import android.Manifest
-import android.Manifest.permission.POST_NOTIFICATIONS
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Build
 import android.os.IBinder
-import androidx.core.app.ActivityCompat
+import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.gomahrepoproject.R
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class LocationService : Service() {
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    private var childId: String? = null
+    private var isLocationEnabled = false
+
+    companion object {
+        private const val TAG = "LocationService"
+        private const val NOTIFICATION_ID = 1
+    }
 
     private val locationRequest by lazy {
-        LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
-            .setIntervalMillis(1000)
+        LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setMinUpdateIntervalMillis(2000)
             .build()
     }
 
-    private val locationCallBack by lazy {
-        object : LocationCallback() {
-
-            override fun onLocationResult(location: LocationResult) {
-                val lat = location.lastLocation?.latitude.toString()
-                val lng = location.lastLocation?.longitude.toString()
-                startLocationService(lat, lng)
+    private val locationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
+                isLocationEnabled = isLocationEnabled()
+                if (!isLocationEnabled) {
+                    stopLocationUpdates()
+                    Log.d(TAG, "Location services disabled, updates stopped")
+                } else {
+                    startLocationUpdates()
+                    Log.d(TAG, "Location services enabled, updates started")
+                }
             }
         }
     }
 
-    private fun startLocationService(lat: String, lng: String) {
+    override fun onCreate() {
+        super.onCreate()
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        registerReceiver(locationReceiver, IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION))
+        initializeService()
+    }
+
+    private fun initializeService() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !user.isEmailVerified) {
+            Log.e(TAG, "User not authenticated or email not verified")
+            stopSelf()
+            return
+        }
+
+        val userId = user.uid
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val role = snapshot.getValue(String::class.java)
+                    if (role == "child") {
+                        childId = userId
+                        isLocationEnabled = isLocationEnabled()
+                        if (isLocationEnabled) {
+                            startForegroundService()
+                            startLocationUpdates()
+                        } else {
+                            Log.d(TAG, "Location services disabled, waiting for enable")
+                        }
+                    } else {
+                        Log.d(TAG, "Not a child user, stopping service")
+                        stopSelf()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error fetching role: ${error.message}")
+                    stopSelf()
+                }
+            })
+    }
+
+    private fun startForegroundService() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.launcher_ic)
-            .setContentTitle("Current Location")
-            .setContentText("$lat $lng")
+            .setContentTitle("Location Sharing Active")
+            .setContentText("Sending your location")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
             .build()
-
-
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
-                    POST_NOTIFICATIONS
+                    Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                startForeground(1, notification)
+                startForeground(NOTIFICATION_ID, notification)
+            } else {
+                Log.e(TAG, "Notification permission not granted")
             }
         } else {
-            startForeground(1, notification)
+            startForeground(NOTIFICATION_ID, notification)
         }
     }
 
+    private fun startLocationUpdates() {
+        if (!isLocationEnabled || childId == null) return
 
-    private fun locationUpdates() {
-        val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        if (ActivityCompat.checkSelfPermission(
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val locationModel = LocationModel(
+                        latitude = location.latitude.toString(),
+                        longitude = location.longitude.toString(),
+                        timestamp = System.currentTimeMillis()
+                    )
+                    FirebaseDatabase.getInstance().getReference("locations").child(childId!!)
+                        .setValue(locationModel)
+                        .addOnSuccessListener {
+                            Log.d(
+                                TAG,
+                                "Location updated: ${location.latitude}, ${location.longitude}"
+                            )
+                        }
+                        .addOnFailureListener {
+                            Log.e(TAG, "Failed to update location: ${it.message}")
+                        }
+                }
+            }
+        }
+
+        if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+            ) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(
                 this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
-            return
+            fusedLocationProviderClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        } else {
+            Log.e(TAG, "Location permissions not granted")
+            stopSelf()
         }
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null)
     }
 
+    private fun stopLocationUpdates() {
+        if (::locationCallback.isInitialized) {
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        }
+        Log.d(TAG, "Location updates stopped")
+    }
 
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-       locationUpdates()
         return START_STICKY
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        stopLocationUpdates()
+        unregisterReceiver(locationReceiver)
+        if (isLocationEnabled) {
+            val intent = Intent(this, LocationService::class.java)
+            startService(intent)
+            Log.d(TAG, "Service restarting due to location enabled")
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null

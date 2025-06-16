@@ -38,6 +38,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
                 val location = snapshot.getValue(LocationModel::class.java)
                 if (location != null) {
                     _childLocation.value = location!!
+                    Log.d(TAG, "Child location updated: ${location.latitude}, ${location.longitude}")
                 }
             }
 
@@ -78,6 +79,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
             override fun onDataChange(snapshot: DataSnapshot) {
                 val isSharing = snapshot.child("isSharing").getValue(Boolean::class.java) ?: false
                 _isSharingLocation.value = isSharing
+                Log.d(TAG, "Location sharing status: $isSharing")
             }
 
             override fun onCancelled(error: DatabaseError) {
