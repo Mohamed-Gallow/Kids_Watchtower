@@ -65,9 +65,6 @@ class SecuBlockFragment : Fragment() {
             }
         }
 
-        binding.btnTest.setOnClickListener {
-            findNavController().navigate(R.id.action_secuLogFragment_to_childSearchFragment)
-        }
     }
 
     private fun listenForBlockedSites() {

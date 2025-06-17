@@ -86,11 +86,7 @@
         android:id="@+id/secuLogFragment"
         android:name="com.example.gomahrepoproject.main.seculog.SecuBlockFragment"
         android:label="fragment_secu_log"
-        tools:layout="@layout/fragment_secu_block_log" >
-        <action
-            android:id="@+id/action_secuLogFragment_to_childSearchFragment"
-            app:destination="@id/childSearchFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_secu_block_log" />
     <fragment
         android:id="@+id/locationFragment"
         android:name="com.example.gomahrepoproject.main.location.LocationFragment"
@@ -108,9 +104,4 @@
         android:name="com.example.gomahrepoproject.main.link.ChildLinkFragment"
         android:label="fragment_child_link"
         tools:layout="@layout/fragment_child_link" />
-    <fragment
-        android:id="@+id/childSearchFragment"
-        android:name="com.example.gomahrepoproject.main.seculog.TestSecuFragment"
-        android:label="fragment_child_search"
-        tools:layout="@layout/fragment_test_secu" />
 </navigation>
