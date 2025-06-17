@@ -107,6 +107,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="26dp"
+            android:textColor="@color/lightBlack"
             android:layout_marginTop="16sp"
             android:text="Child E-mail"
             android:textSize="14sp"
@@ -122,9 +123,10 @@
             android:layout_marginBottom="12dp"
             android:background="@drawable/curve_bg"
             android:hint="set child e-mail"
+            android:textColorHint="@color/gray"
             android:paddingHorizontal="16sp"
             android:paddingVertical="12dp"
-            android:textColor="@color/unchecked_bottom_nav_color"
+            android:textColor="@color/lightBlack"
             android:textSize="14sp"
             app:backgroundTint="@null" />
 
@@ -133,7 +135,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="40dp"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="8dp"
             android:background="@drawable/scan_bg"
             android:text="Link"
             android:textColor="@color/blueGreen"
