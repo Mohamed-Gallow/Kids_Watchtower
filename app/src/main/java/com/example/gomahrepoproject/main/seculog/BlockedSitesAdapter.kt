@@ -47,7 +47,3 @@ class BlockedSitesAdapter(
         diffResult.dispatchUpdatesTo(this)
     }
 }
-
-
-
-

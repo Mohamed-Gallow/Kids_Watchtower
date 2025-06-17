@@ -115,5 +115,9 @@ dependencies {
     implementation ("com.google.firebase:firebase-auth-ktx:23.0.0")
     implementation ("com.google.firebase:firebase-database-ktx:21.0.0")
 
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.0")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+
 
 }
