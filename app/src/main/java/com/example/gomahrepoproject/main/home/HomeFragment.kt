@@ -3,6 +3,7 @@ package com.example.gomahrepoproject.main.home
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -176,12 +177,15 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private fun checkPermissionsAndStart() {
         val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+        // Remove duplicate ACCESS_BACKGROUND_LOCATION for TIRAMISU
 
         val notGrantedPermissions = permissions.filter {
             ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
@@ -200,13 +204,29 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun startLocationService() {
-        val intent = Intent(requireContext(), LocationService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            requireContext().startForegroundService(intent)
-        } else {
-            requireContext().startService(intent)
+        try {
+            // Check if service is already running
+            val activityManager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val isServiceRunning = activityManager.getRunningServices(Integer.MAX_VALUE)
+                .any { it.service.className == LocationService::class.java.name }
+            if (isServiceRunning) {
+                Log.d(TAG, "LocationService is already running")
+                showToast("Location service is already active")
+                return
+            }
+
+            Log.d(TAG, "Attempting to start LocationService")
+            val intent = Intent(requireContext(), LocationService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                requireContext().startForegroundService(intent)
+            } else {
+                requireContext().startService(intent)
+            }
+            Log.d(TAG, "LocationService start command issued")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start LocationService: ${e.message}", e)
+            showToast("Failed to start location service")
         }
-        Log.d(TAG, "Location service started")
     }
 
     private fun initCurrentLocation() {
@@ -249,6 +269,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             }
         }
     }
+
     private fun initSpinnerItem() {
         val devices = mutableListOf(DeviceModel("Mohammed Phone", 60))
         binding.userSpinner.adapter = SpinnerAdapter(requireContext(), devices)
