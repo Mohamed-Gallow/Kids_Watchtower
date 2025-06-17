@@ -65,6 +65,12 @@ class SecuBlockFragment : Fragment() {
             }
         }
 
+        initViews()
+
+    }
+
+    private fun initViews(){
+        findNavController().navigate(R.id.action_secuLogFragment_to_testSecuFragment)
     }
 
     private fun listenForBlockedSites() {
