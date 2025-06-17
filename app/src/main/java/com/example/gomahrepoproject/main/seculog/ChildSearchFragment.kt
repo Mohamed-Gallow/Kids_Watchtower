@@ -3,6 +3,8 @@ package com.example.gomahrepoproject.main.seculog
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -24,12 +26,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import androidx.lifecycle.lifecycleScope
-import com.google.firebase.database.ktx.getValue
-import kotlinx.coroutines.tasks.await
 
 class ChildSearchFragment : Fragment() {
 
@@ -39,10 +35,15 @@ class ChildSearchFragment : Fragment() {
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private var lastEnteredUrl: String? = null
+    private var isChildAccount = false
+    private var parentId: String? = null
+    private var isSitesLoaded = false
+    private var retryCount = 0
+    private val maxRetries = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        listenForBlockedSites()
+        checkAccountRole()
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -67,6 +68,10 @@ class ChildSearchFragment : Fragment() {
                 }
             }
         })
+        // Delay to ensure role check completes
+        Handler(Looper.getMainLooper()).postDelayed({
+            setupBlockedSitesListener()
+        }, 500)
     }
 
     private fun initializeViews(view: View) {
@@ -107,6 +112,17 @@ class ChildSearchFragment : Fragment() {
     private fun setupButtonListeners(view: View) {
         view.findViewById<Button>(R.id.btnGo)?.setOnClickListener {
             lastEnteredUrl = etUrl?.text?.toString()?.trim()
+            if (!isSitesLoaded) {
+                if (retryCount < maxRetries) {
+                    retryCount++
+                    showToast("Blocked sites not loaded, retrying ($retryCount/$maxRetries)...")
+                    setupBlockedSitesListener()
+                } else {
+                    showToast("Failed to load blocked sites after $maxRetries attempts.")
+                    isSitesLoaded = true // Allow navigation as fallback
+                }
+                return@setOnClickListener
+            }
             loadUrlSafely()
         }
         view.findViewById<ImageView>(R.id.ivBack)?.setOnClickListener {
@@ -114,39 +130,86 @@ class ChildSearchFragment : Fragment() {
         }
     }
 
-    private fun listenForBlockedSites() = lifecycleScope.launch {
-        val parentUserId = getParentUserId() ?: run {
-            showToast("Parent not linked")
-            return@launch
+    private fun checkAccountRole() {
+        val userId = auth.currentUser?.uid ?: run {
+            showToast("User not authenticated")
+            return
         }
-        database.getReference("users").child(parentUserId).child("blockedSites")
-            .addValueEventListener(object : ValueEventListener {
+
+        database.getReference("users").child(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    blockedSites.clear()
-                    snapshot.children.forEach { site ->
-                        site.getValue(String::class.java)?.let { blockedSites.add(it) }
+                    isChildAccount = snapshot.child("role").getValue(String::class.java) == "child"
+
+                    // 🔥 Corrected this line
+                    parentId = snapshot.child("linkedAccounts").child("parentId").getValue(String::class.java)
+
+                    Log.d("ROLE_CHECK", "User: $userId, IsChild: $isChildAccount, ParentId: $parentId")
+
+                    if (isChildAccount && parentId == null) {
+                        showToast("Child account missing parent ID.")
                     }
-                    Log.d("URL_BLOCKER", "Updated blocked sites: $blockedSites")
                 }
+
                 override fun onCancelled(error: DatabaseError) {
-                    showToast("Error fetching blocked sites: ${error.message}")
+                    showToast("Error checking account role: ${error.message}")
                 }
             })
     }
 
-    private suspend fun getParentUserId(): String? = withContext(Dispatchers.IO) {
-        val childUserId = auth.currentUser?.uid ?: return@withContext null
-        try {
-            val snapshot = database.getReference("users")
-                .child(childUserId)
-                .child("parentUserId")
-                .get()
-                .await()
-            snapshot.getValue(String::class.java)
-        } catch (e: Exception) {
-            showToast("Error fetching parent ID: ${e.message}")
-            null
+
+    private fun setupBlockedSitesListener() {
+        if (parentId == null && auth.currentUser?.uid != null) {
+            checkAccountRole() // Ensure role is checked if not set
         }
+        if (isChildAccount && parentId != null) {
+            listenForParentBlockedSites(parentId!!)
+        } else {
+            listenForBlockedSites()
+        }
+    }
+
+    private fun listenForBlockedSites() {
+        val userId = auth.currentUser?.uid ?: run {
+            showToast("User not authenticated")
+            isSitesLoaded = true // Fallback
+            return
+        }
+        database.getReference("users").child(userId).child("blockedSites")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    blockedSites.clear()
+                    val sites = snapshot.children.mapNotNull { it.getValue(String::class.java) }
+                    if (sites.isNotEmpty()) {
+                        blockedSites.addAll(sites)
+                    }
+                    isSitesLoaded = true
+                    Log.d("URL_BLOCKER", "Updated own blocked sites for $userId: $blockedSites")
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching blocked sites: ${error.message}")
+                    isSitesLoaded = true // Allow navigation on error
+                }
+            })
+    }
+
+    private fun listenForParentBlockedSites(parentId: String) {
+        database.getReference("users").child(parentId).child("blockedSites")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    blockedSites.clear()
+                    val sites = snapshot.children.mapNotNull { it.getValue(String::class.java) }
+                    if (sites.isNotEmpty()) {
+                        blockedSites.addAll(sites)
+                    }
+                    isSitesLoaded = true
+                    Log.d("URL_BLOCKER", "Updated parent blocked sites for child: $blockedSites from parent $parentId")
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching parent blocked sites: ${error.message} for parent $parentId")
+                    isSitesLoaded = true // Allow navigation on error
+                }
+            })
     }
 
     private fun loadUrlSafely() {
@@ -225,14 +288,12 @@ class ChildSearchFragment : Fragment() {
 
     private fun isBlocked(url: String): Boolean {
         val domain = extractDomain(url)
-        val blocked = blockedSites.any { blocked ->
+        return blockedSites.any { blocked ->
             val blockedDomain = extractDomain(blocked)
             domain == blockedDomain || domain.endsWith(".$blockedDomain")
+        }.also { blocked ->
+            if (blocked) Log.d("URL_BLOCKER", "Blocked URL: $url (domain: $domain)")
         }
-        if (blocked) {
-            Log.d("URL_BLOCKER", "Blocked URL: $url (domain: $domain)")
-        }
-        return blocked
     }
 
     private fun extractDomain(url: String): String {

@@ -105,8 +105,6 @@ class SecuBlockFragment : Fragment() {
         }
     }
 
-
-
     private fun removeBlockedSite(urlToRemove: String) {
         val userId = auth.currentUser?.uid ?: run {
             showToast("User not authenticated")
