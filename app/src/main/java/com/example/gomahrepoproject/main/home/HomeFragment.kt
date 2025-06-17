@@ -229,10 +229,14 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                     val addressList = geocoder.getFromLocation(lat, lng, 1)
                     binding.tvLocationName.text = if (!addressList.isNullOrEmpty()) {
                         val address = addressList[0]
-                        val village = address.subLocality ?: ""
-                        val city = address.locality ?: ""
-                        val province = address.adminArea ?: ""
-                        "$village, $city, $province"
+                        val village = address.subLocality?.trim() ?: ""
+                        val city = address.locality?.trim() ?: ""
+                        val province = address.adminArea?.trim() ?: ""
+                        // Filter out empty components and join with a comma
+                        listOf(village, city, province)
+                            .filter { it.isNotBlank() }
+                            .joinToString(", ")
+                            .takeIf { it.isNotBlank() } ?: "Unknown Location"
                     } else {
                         "Unknown Location"
                     }
@@ -245,7 +249,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             }
         }
     }
-
     private fun initSpinnerItem() {
         val devices = mutableListOf(DeviceModel("Mohammed Phone", 60))
         binding.userSpinner.adapter = SpinnerAdapter(requireContext(), devices)
