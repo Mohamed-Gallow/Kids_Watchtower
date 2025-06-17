@@ -110,7 +110,7 @@
         tools:layout="@layout/fragment_child_link" />
     <fragment
         android:id="@+id/childSearchFragment"
-        android:name="com.example.gomahrepoproject.main.seculog.ChildSearchFragment"
+        android:name="com.example.gomahrepoproject.main.seculog.TestSecuFragment"
         android:label="fragment_child_search"
-        tools:layout="@layout/fragment_child_search" />
+        tools:layout="@layout/fragment_test_secu" />
 </navigation>
