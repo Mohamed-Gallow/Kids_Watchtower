@@ -24,6 +24,12 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.database.ktx.getValue
+import kotlinx.coroutines.tasks.await
 
 class ChildSearchFragment : Fragment() {
 
@@ -32,7 +38,7 @@ class ChildSearchFragment : Fragment() {
     private val blockedSites = mutableListOf<String>()
     private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    private var lastEnteredUrl: String? = null // To store the original URL entered by the user
+    private var lastEnteredUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,14 +85,14 @@ class ChildSearchFragment : Fragment() {
     private fun setupWebView() {
         webView?.apply {
             settings.apply {
-                javaScriptEnabled = true // Enabled for sites like x.com and facebook.com
-                domStorageEnabled = true // Required for some modern websites
+                javaScriptEnabled = true
+                domStorageEnabled = true
                 setSupportZoom(true)
                 builtInZoomControls = true
                 displayZoomControls = false
-                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE // Allow mixed content for testing
+                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                 setGeolocationEnabled(false)
-                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" // Modern user agent
+                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
                 setSupportMultipleWindows(false)
                 allowFileAccess = false
                 cacheMode = WebSettings.LOAD_DEFAULT
@@ -100,7 +106,7 @@ class ChildSearchFragment : Fragment() {
 
     private fun setupButtonListeners(view: View) {
         view.findViewById<Button>(R.id.btnGo)?.setOnClickListener {
-            lastEnteredUrl = etUrl?.text?.toString()?.trim() // Store the original URL
+            lastEnteredUrl = etUrl?.text?.toString()?.trim()
             loadUrlSafely()
         }
         view.findViewById<ImageView>(R.id.ivBack)?.setOnClickListener {
@@ -108,12 +114,12 @@ class ChildSearchFragment : Fragment() {
         }
     }
 
-    private fun listenForBlockedSites() {
-        val userId = auth.currentUser?.uid ?: run {
-            showToast("User not authenticated")
-            return
+    private fun listenForBlockedSites() = lifecycleScope.launch {
+        val parentUserId = getParentUserId() ?: run {
+            showToast("Parent not linked")
+            return@launch
         }
-        database.getReference("users").child(userId).child("blockedSites")
+        database.getReference("users").child(parentUserId).child("blockedSites")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     blockedSites.clear()
@@ -128,6 +134,21 @@ class ChildSearchFragment : Fragment() {
             })
     }
 
+    private suspend fun getParentUserId(): String? = withContext(Dispatchers.IO) {
+        val childUserId = auth.currentUser?.uid ?: return@withContext null
+        try {
+            val snapshot = database.getReference("users")
+                .child(childUserId)
+                .child("parentUserId")
+                .get()
+                .await()
+            snapshot.getValue(String::class.java)
+        } catch (e: Exception) {
+            showToast("Error fetching parent ID: ${e.message}")
+            null
+        }
+    }
+
     private fun loadUrlSafely() {
         val url = lastEnteredUrl ?: return
         when {
@@ -140,7 +161,7 @@ class ChildSearchFragment : Fragment() {
 
     private fun handleBlockedUrl() {
         showToast("This website is blocked!")
-        showBlockedPage(webView, lastEnteredUrl) // Pass the original URL to maintain it
+        showBlockedPage(webView, lastEnteredUrl)
     }
 
     private fun loadValidUrl(url: String) {
@@ -170,12 +191,11 @@ class ChildSearchFragment : Fragment() {
                 Log.d("WEBVIEW", "onLoadResource: $url")
                 if (isBlocked(url)) {
                     view.stopLoading()
-                    showBlockedPage(view, lastEnteredUrl) // Use lastEnteredUrl for consistency
+                    showBlockedPage(view, lastEnteredUrl)
                 }
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                // Only update etUrl if not showing a blocked page
                 if (url != "about:blank" && lastEnteredUrl != null && !url.contains("blocked")) {
                     etUrl?.setText(url)
                 }
@@ -248,7 +268,7 @@ class ChildSearchFragment : Fragment() {
 
     private fun showBlockedPage(view: WebView? = webView, baseUrl: String? = null) {
         view?.loadDataWithBaseURL(
-            baseUrl, // Use the original URL as the base to maintain it in the URL bar
+            baseUrl,
             """
             <html>
             <head>
