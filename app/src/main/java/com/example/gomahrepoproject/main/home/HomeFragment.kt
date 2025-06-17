@@ -14,80 +14,85 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.registerReceiver
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gomahrepoproject.ChildActivity
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.databinding.FragmentHomeBinding
 import com.example.gomahrepoproject.main.data.Data
 import com.example.gomahrepoproject.main.location.LocationService
+import com.example.gomahrepoproject.main.location.LocationViewModel
 import com.example.gomahrepoproject.main.profile.ProfileViewModel
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import java.util.Locale
 
-
 @Suppress("DEPRECATION")
-class HomeFragment : Fragment() , OnMapReadyCallback {
+class HomeFragment : Fragment(), OnMapReadyCallback {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-
-
     private lateinit var batteryReceiver: BroadcastReceiver
+    private lateinit var recentAdapter: RecentAdapter
+    private val profileViewModel: ProfileViewModel by viewModels()
+    private val locationViewModel: LocationViewModel by viewModels()
+    private var googleMap: GoogleMap? = null
+
+    private var childMarker: Marker? = null
+    private var childId: String? = null
+    private val pathPoints = mutableListOf<LatLng>()
+    private var polyline: Polyline? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private var lastLatLng: LatLng? = null
+    private var isStopped = false
+    private var isFirstLocationUpdate = true
+
+    private var isChild = false
+
+    companion object {
+        private const val TAG = "HomeFragment"
+    }
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allGranted = permissions.all { it.value }
             if (allGranted) {
-                startLocationUpdates()
-                startLocationService()
-                showToast("Live location started")
+                if (isChild) {
+                    startLocationService()
+                    showToast("Location service started")
+                } else if (childId != null) {
+                    locationViewModel.requestChildLocationSharing(childId!!)
+                    showToast("Child location tracking started")
+                }
             } else {
-                showToast("All permissions must be granted")
+                showToast("All permissions must be granted for location tracking")
             }
         }
-
-
-    private lateinit var recentAdapter: RecentAdapter
-    private val profileViewModel : ProfileViewModel by viewModels()
-    private lateinit var googleMap: GoogleMap
-
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private var currentMarker: Marker? = null
-
-    private val pathPoints = mutableListOf<LatLng>()
-    private var polyline: Polyline? = null
-
-    private val handler = Handler(Looper.getMainLooper())
-    private var lastLatLng: LatLng? = null
-    private var isStopped = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inflate the layout for this fragment
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -98,83 +103,130 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         initAdapters()
         manageTime()
         initViews()
-        initCurrentLocation()
 
-        val mapFragment =
-            childFragmentManager.findFragmentById(R.id.fHomeLocation) as? com.google.android.gms.maps.SupportMapFragment
-        mapFragment?.getMapAsync(this)
+        // Check authentication and email verification
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null || !user.isEmailVerified) {
+            showToast("Please log in and verify your email")
+            findNavController().navigate(R.id.action_homeFragment_to_connectPhoneFragment)
+            return
+        }
 
+        val userId = user.uid
+        // Store FCM token
+        locationViewModel.storeFcmToken(userId)
 
+        // Get user role from Firebase
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val role = snapshot.getValue(String::class.java)
+                    if (role == "child") {
+                        isChild = true
+                        childId = userId
+                        binding.sharingImage.visibility = View.VISIBLE
+                        checkPermissionsAndStart()
+                    } else if (role == "parent") {
+                        isChild = false
+                        // Initialize map for parents
+                        val mapFragment =
+                            childFragmentManager.findFragmentById(R.id.fHomeLocation) as? com.google.android.gms.maps.SupportMapFragment
+                        mapFragment?.getMapAsync(this@HomeFragment)
+                        // Get linked child ID
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("linkedAccounts").child("childId")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    childId = snapshot.getValue(String::class.java)
+                                    if (childId != null) {
+                                        locationViewModel.listenForChildLocation(childId!!)
+                                        checkPermissionsAndStart()
+                                    } else {
+                                        showToast("No linked child found. Please link a child account.")
+                                        findNavController().navigate(R.id.action_homeFragment_to_connectPhoneFragment)
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error fetching child ID: ${error.message}")
+                                }
+                            })
+                    } else {
+                        showToast("Invalid user role. Please register with a valid role.")
+                        FirebaseAuth.getInstance().signOut()
+                        findNavController().navigate(R.id.action_homeFragment_to_connectPhoneFragment)
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching role: ${error.message}")
+                }
+            })
 
         binding.navToChildFragment.setOnClickListener {
             val intent = Intent(requireContext(), ChildActivity::class.java)
             requireContext().startActivity(intent)
         }
-
     }
-
-    override fun onMapReady(p0: GoogleMap) {
-        googleMap = p0
-        checkPermissionsAndStart()
-    }
-
 
     private fun initViews() {
-
         profileViewModel.user.observe(viewLifecycleOwner) { user ->
             binding.headerName.text = user?.displayName ?: ""
         }
-
-
     }
 
     private fun checkPermissionsAndStart() {
         val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
         )
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         val notGrantedPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                it
-            ) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (notGrantedPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(notGrantedPermissions.toTypedArray())
         } else {
-            startLocationUpdates()
-            startLocationService()
-            showToast("Live location started")
+            if (isChild) {
+                startLocationService()
+            } else if (childId != null) {
+                locationViewModel.requestChildLocationSharing(childId!!)
+                initCurrentLocation()
+            }
         }
     }
 
     private fun startLocationService() {
         val intent = Intent(requireContext(), LocationService::class.java)
-        requireActivity().startService(intent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent)
+        } else {
+            requireContext().startService(intent)
+        }
+        Log.d(TAG, "Location service started")
     }
 
-
     private fun initCurrentLocation() {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
-                    val addressList =
-                        geocoder.getFromLocation(location.latitude, location.longitude, 1)
-
+        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
+            val lat = location.latitude.toDoubleOrNull() ?: run {
+                binding.tvLocationName.text = "Child location unavailable"
+                return@observe
+            }
+            val lng = location.longitude.toDoubleOrNull() ?: run {
+                binding.tvLocationName.text = "Child location unavailable"
+                return@observe
+            }
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                try {
+                    val addressList = geocoder.getFromLocation(lat, lng, 1)
                     binding.tvLocationName.text = if (!addressList.isNullOrEmpty()) {
                         val address = addressList[0]
                         val village = address.subLocality ?: ""
@@ -184,25 +236,20 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                     } else {
                         "Unknown Location"
                     }
-                } else {
-
-                    "Unable to get location".also { binding.tvLocationName.text = it }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Geocoding failed: ${e.message}")
+                    binding.tvLocationName.text = "Unable to get address"
                 }
+            } else {
+                binding.tvLocationName.text = "Location permission denied"
             }
-        } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                1
-            )
         }
     }
 
     private fun initSpinnerItem() {
-        val devices = mutableListOf(DeviceModel("Mohammed Phone", 60)) // Initial data
+        val devices = mutableListOf(DeviceModel("Mohammed Phone", 60))
         binding.userSpinner.adapter = SpinnerAdapter(requireContext(), devices)
 
-        // Battery Receiver to update Spinner data
         batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val batteryLevel = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
@@ -212,21 +259,55 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
                 } else {
                     0
                 }
-
-                // Update the first device's battery level (assuming it's the current phone)
                 devices[0].batteryLevel = batteryPct
                 (binding.userSpinner.adapter as SpinnerAdapter).notifyDataSetChanged()
             }
         }
 
-        // Register receiver
         requireContext().registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
     }
 
     private fun manageTime() {
         binding.icManageTime.setOnClickListener {
+            // Implement time management logic
+        }
+    }
 
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        if (!isChild) {
+            setupChildLocationObserver()
+        }
+    }
 
+    private fun setupChildLocationObserver() {
+        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
+            val lat = location.latitude.toDoubleOrNull() ?: return@observe
+            val lng = location.longitude.toDoubleOrNull() ?: return@observe
+            val childLatLng = LatLng(lat, lng)
+            if (childMarker == null) {
+                childMarker = googleMap?.addMarker(
+                    MarkerOptions().position(childLatLng).title("Child's Location")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                )
+                googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                polyline = googleMap?.addPolyline(
+                    PolylineOptions()
+                        .color(ContextCompat.getColor(requireContext(), R.color.blue))
+                        .width(15f)
+                        .geodesic(true)
+                )
+                isFirstLocationUpdate = false
+            } else {
+                childMarker?.position = childLatLng
+                if (isFirstLocationUpdate) {
+                    googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                    isFirstLocationUpdate = false
+                }
+            }
+            pathPoints.add(childLatLng)
+            polyline?.points = pathPoints
+            detectMovement(childLatLng)
         }
     }
 
@@ -259,63 +340,6 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         lastLatLng = newLatLng
     }
 
-    private fun startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
-            .setIntervalMillis(1000)
-            .build()
-
-        fusedLocationProviderClient =
-            LocationServices.getFusedLocationProviderClient(requireContext())
-
-        fusedLocationProviderClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            requireActivity().mainLooper
-        )
-    }
-
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            val location = locationResult.lastLocation ?: return
-            val latLng = LatLng(location.latitude, location.longitude)
-
-            // Check if googleMap is initialized
-            if (::googleMap.isInitialized) {
-                if (currentMarker == null) {
-                    currentMarker = googleMap.addMarker(
-                        MarkerOptions().position(latLng).title("My Location")
-                    )
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
-
-                    polyline = googleMap.addPolyline(
-                        PolylineOptions()
-                            .color(ContextCompat.getColor(requireContext(), R.color.blue))
-                            .width(10f)
-                            .geodesic(true)
-                    )
-                } else {
-                    currentMarker?.position = latLng
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
-                }
-
-                pathPoints.add(latLng)
-                polyline?.points = pathPoints
-
-                detectMovement(latLng)
-            }
-        }
-    }
-
-
     private fun startStopTimer() {
         handler.postDelayed({
             if (isStopped) {
@@ -326,7 +350,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     }
 
     private fun animateMarker() {
-        currentMarker?.let { marker ->
+        childMarker?.let { marker ->
             val animator = ValueAnimator.ofFloat(0f, 20f, 0f)
             animator.duration = 1000
             animator.addUpdateListener {
@@ -340,9 +364,7 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     private fun animatePolylineColor() {
         polyline?.let { polyline ->
             val colorFrom = ContextCompat.getColor(requireContext(), R.color.blue)
-            val colorTo =
-                ContextCompat.getColor(requireContext(), R.color.red)
-
+            val colorTo = ContextCompat.getColor(requireContext(), R.color.red)
             val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
             colorAnimation.duration = 2000
             colorAnimation.addUpdateListener { animator ->
@@ -352,16 +374,14 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
         }
     }
 
-
     private fun initAdapters() {
         recentAdapter = RecentAdapter(
             listOf(
                 Data(R.drawable.facebook_icon, "Facebook", "10:15", "35 Minute"),
                 Data(R.drawable.twitter, "X", "00:32", "18 Minute"),
-                Data(R.drawable.insta, "Instagram", "08:12", "2 Hours"),
+                Data(R.drawable.insta, "Instagram", "08:12", "2 Hours")
             )
         )
-
         val layoutManager = LinearLayoutManager(requireContext())
         binding.recentRecyclerview.apply {
             this.layoutManager = layoutManager
@@ -370,9 +390,10 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
     }
 
     private fun showToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        if (message.isNotEmpty()) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -382,6 +403,6 @@ class HomeFragment : Fragment() , OnMapReadyCallback {
             e.printStackTrace()
         }
         _binding = null
+        googleMap = null
     }
-
 }

@@ -15,7 +15,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -23,11 +22,15 @@ import androidx.navigation.fragment.findNavController
 import com.example.gomahrepoproject.R
 import com.example.gomahrepoproject.auth.AuthViewModel
 import com.example.gomahrepoproject.databinding.FragmentLocationBinding
-import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Polyline
+import com.google.android.gms.maps.model.PolylineOptions
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -39,62 +42,34 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     private val authViewModel: AuthViewModel by viewModels()
     private val locationViewModel: LocationViewModel by viewModels()
 
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private lateinit var googleMap: GoogleMap
-    private var currentMarker: Marker? = null
+    private var googleMap: GoogleMap? = null
     private var childMarker: Marker? = null
+    private var childId: String? = null
 
     private val pathPoints = mutableListOf<LatLng>()
     private var polyline: Polyline? = null
-
     private val handler = Handler(Looper.getMainLooper())
     private var lastLatLng: LatLng? = null
     private var isStopped = false
-    private var childId: String? = null
+    private var isFirstLocationUpdate = true
 
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            val location = locationResult.lastLocation ?: return
-            val latLng = LatLng(location.latitude, location.longitude)
-            val lat = location.latitude.toString()
-            val lng = location.longitude.toString()
-            val locationModel = LocationModel(lat, lng)
-            locationViewModel.sendCurrentLocationToFirebase(locationModel)
+    private var isChild = false
 
-            if (currentMarker == null) {
-                currentMarker = googleMap.addMarker(
-                    MarkerOptions().position(latLng).title("My Location")
-                )
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
-
-                polyline = googleMap.addPolyline(
-                    PolylineOptions()
-                        .color(ContextCompat.getColor(requireContext(), R.color.blue))
-                        .width(15f)
-                        .geodesic(true)
-                )
-            } else {
-                currentMarker?.position = latLng
-                googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
-            }
-
-            pathPoints.add(latLng)
-            polyline?.points = pathPoints
-
-            detectMovement(latLng)
-        }
+    companion object {
+        private const val TAG = "LocationFragment"
     }
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             val allGranted = permissions.all { it.value }
             if (allGranted) {
-                startLocationUpdates()
-                startLocationService()
-                if (childId != null) {
+                if (isChild) {
+                    startLocationService()
+                    showToast("Location service started")
+                } else if (childId != null) {
                     locationViewModel.requestChildLocationSharing(childId!!)
+                    showToast("Child location tracking started")
                 }
-                showToast("Live location started")
             } else {
                 showToast("All permissions must be granted")
             }
@@ -111,76 +86,88 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
-        mapFragment?.getMapAsync(this)
-
-        // Get child ID from Firebase
-        val userId = authViewModel.auth.currentUser?.uid
-        if (userId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(userId).child("linkedAccounts").child("childId")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        childId = snapshot.getValue(String::class.java)
-                        if (childId != null) {
-                            locationViewModel.listenForChildLocation(childId!!)
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        showToast("Error fetching child ID: ${error.message}")
-                    }
-                })
+        // Check authentication and email verification
+        val user = authViewModel.auth.currentUser
+        if (user == null || !user.isEmailVerified) {
+            showToast("Please log in and verify your email")
+            findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
+            return
         }
+
+        val userId = user.uid
+        FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val role = snapshot.getValue(String::class.java)
+                    if (role == "child") {
+                        isChild = true
+                        childId = userId
+                        binding.tvLocationUsername.visibility = View.GONE
+                        checkPermissionsAndStart()
+                    } else if (role == "parent") {
+                        isChild = false
+                        // Initialize map for parents
+                        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? com.google.android.gms.maps.SupportMapFragment
+                        mapFragment?.getMapAsync(this@LocationFragment)
+                        // Get linked child ID
+                        FirebaseDatabase.getInstance().getReference("users").child(userId)
+                            .child("linkedAccounts").child("childId")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    childId = snapshot.getValue(String::class.java)
+                                    if (childId != null) {
+                                        locationViewModel.listenForChildLocation(childId!!)
+                                        setupChildName()
+                                        checkPermissionsAndStart()
+                                    } else {
+                                        showToast("No linked child found. Please link a child account.")
+                                        findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {
+                                    showToast("Error fetching child ID: ${error.message}")
+                                }
+                            })
+                    } else {
+                        showToast("Invalid user role. Please register with a valid role.")
+                        authViewModel.logout()
+                        findNavController().navigate(R.id.action_locationFragment_to_connectPhoneFragment)
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    showToast("Error fetching role: ${error.message}")
+                }
+            })
 
         initViews()
     }
 
     private fun initViews() {
-        binding.btnStartLiveLocation.setOnClickListener {
-            checkPermissionsAndStart()
-        }
-
         binding.ivLoginBackArrow.setOnClickListener {
-            this@LocationFragment.findNavController().popBackStack()
+            findNavController().popBackStack()
         }
+    }
 
-        binding.btnStopLiveLocation.setOnClickListener {
-            stopLocationUpdates()
-            stopLocationService()
-            if (childId != null) {
-                locationViewModel.stopChildLocationSharing(childId!!)
-            }
-            showToast("Live location stopped")
-        }
-
-        val firstName = authViewModel.auth.currentUser?.displayName
-            ?.split(" ")
-            ?.firstOrNull()
-            ?.replaceFirstChar { it.uppercase() }
-        "$firstName's Phone".also { binding.tvLocationUsername.text = it }
-
-        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
-            val lat = location.latitude.toDoubleOrNull() ?: return@observe
-            val lng = location.longitude.toDoubleOrNull() ?: return@observe
-            val childLatLng = LatLng(lat, lng)
-            if (childMarker == null) {
-                childMarker = googleMap.addMarker(
-                    MarkerOptions().position(childLatLng).title("Child's Location")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                )
-            } else {
-                childMarker?.position = childLatLng
-            }
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(childLatLng))
+    private fun setupChildName() {
+        childId?.let { cid ->
+            FirebaseDatabase.getInstance().getReference("users").child(cid).child("displayName")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val childName = snapshot.getValue(String::class.java)
+                        binding.tvLocationUsername.text = "${childName?.replaceFirstChar { it.uppercase() } ?: "Child"}'s Phone"
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        binding.tvLocationUsername.text = "Child's Phone"
+                    }
+                })
         }
     }
 
     private fun checkPermissionsAndStart() {
         val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -188,80 +175,71 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         }
 
         val notGrantedPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                it
-            ) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (notGrantedPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(notGrantedPermissions.toTypedArray())
         } else {
-            startLocationUpdates()
-            startLocationService()
-            if (childId != null) {
+            if (isChild) {
+                startLocationService()
+            } else if (childId != null) {
                 locationViewModel.requestChildLocationSharing(childId!!)
             }
-            showToast("Live location started")
         }
     }
 
     private fun startLocationService() {
         val intent = Intent(requireContext(), LocationService::class.java)
-        requireActivity().startService(intent)
-    }
-
-    private fun stopLocationService() {
-        val intent = Intent(requireContext(), LocationService::class.java)
-        requireActivity().stopService(intent)
-    }
-
-    private fun startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            requireContext().startForegroundService(intent)
+        } else {
+            requireContext().startService(intent)
         }
-
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
-            .setIntervalMillis(1000)
-            .build()
-
-        fusedLocationProviderClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            requireActivity().mainLooper
-        )
-    }
-
-    private fun stopLocationUpdates() {
-        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 
     private fun showToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        if (message.isNotEmpty()) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        if (!isChild) {
+            setupChildLocationObserver()
+        }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        stopLocationUpdates()
-        _binding = null
-    }
-
-    private fun startStopTimer() {
-        handler.postDelayed({
-            if (isStopped) {
-                animateMarker()
-                animatePolylineColor()
+    private fun setupChildLocationObserver() {
+        locationViewModel.childLocation.observe(viewLifecycleOwner) { location ->
+            val lat = location.latitude.toDoubleOrNull() ?: return@observe
+            val lng = location.longitude.toDoubleOrNull() ?: return@observe
+            val childLatLng = LatLng(lat, lng)
+            if (childMarker == null) {
+                childMarker = googleMap?.addMarker(
+                    MarkerOptions().position(childLatLng).title("Child's Location")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                )
+                googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                polyline = googleMap?.addPolyline(
+                    PolylineOptions()
+                        .color(ContextCompat.getColor(requireContext(), R.color.blue))
+                        .width(15f)
+                        .geodesic(true)
+                )
+                isFirstLocationUpdate = false
+            } else {
+                childMarker?.position = childLatLng
+                if (isFirstLocationUpdate) {
+                    googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(childLatLng, 16f))
+                    isFirstLocationUpdate = false
+                }
             }
-        }, 5000)
+            pathPoints.add(childLatLng)
+            polyline?.points = pathPoints
+            detectMovement(childLatLng)
+        }
     }
 
     private fun detectMovement(newLatLng: LatLng) {
@@ -293,8 +271,17 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         lastLatLng = newLatLng
     }
 
+    private fun startStopTimer() {
+        handler.postDelayed({
+            if (isStopped) {
+                animateMarker()
+                animatePolylineColor()
+            }
+        }, 5000)
+    }
+
     private fun animateMarker() {
-        currentMarker?.let { marker ->
+        childMarker?.let { marker ->
             val animator = ValueAnimator.ofFloat(0f, 20f, 0f)
             animator.duration = 1000
             animator.addUpdateListener {
@@ -309,7 +296,6 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
         polyline?.let { polyline ->
             val colorFrom = ContextCompat.getColor(requireContext(), R.color.blue)
             val colorTo = ContextCompat.getColor(requireContext(), R.color.red)
-
             val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
             colorAnimation.duration = 2000
             colorAnimation.addUpdateListener { animator ->
@@ -317,5 +303,11 @@ class LocationFragment : Fragment(), OnMapReadyCallback {
             }
             colorAnimation.start()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+        googleMap = null
     }
 }

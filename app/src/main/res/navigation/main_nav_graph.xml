@@ -17,6 +17,9 @@
             app:exitAnim="@android:anim/fade_out"
             app:popEnterAnim="@android:anim/fade_in"
             app:popExitAnim="@android:anim/fade_out" />
+        <action
+            android:id="@+id/action_homeFragment_to_connectPhoneFragment"
+            app:destination="@id/connectPhoneFragment" />
     </fragment>
     <fragment
         android:id="@+id/notificationFragment"
@@ -96,6 +99,9 @@
         <action
             android:id="@+id/action_locationFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_locationFragment_to_connectPhoneFragment"
+            app:destination="@id/connectPhoneFragment" />
     </fragment>
     <fragment
         android:id="@+id/childLinkFragment"

@@ -10,6 +10,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.messaging.FirebaseMessaging
 
 class LocationViewModel(application: Application) : AndroidViewModel(application) {
     private val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -22,6 +23,21 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
 
     private var _isSharingLocation = MutableLiveData<Boolean>()
     val isSharingLocation: LiveData<Boolean> get() = _isSharingLocation
+
+    fun storeFcmToken(userId: String) {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                usersRef.child(userId).child("fcmToken").setValue(token)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "FCM token stored for user: $userId")
+                    }
+                    .addOnFailureListener {
+                        Log.e(TAG, "Failed to store FCM token: ${it.message}")
+                    }
+            }
+        }
+    }
 
     fun sendCurrentLocationToFirebase(location: LocationModel) {
         if (userId == null) return
@@ -38,6 +54,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
                 val location = snapshot.getValue(LocationModel::class.java)
                 if (location != null) {
                     _childLocation.value = location!!
+                    Log.d(TAG, "Child location updated: ${location.latitude}, ${location.longitude}")
                 }
             }
 
@@ -78,6 +95,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
             override fun onDataChange(snapshot: DataSnapshot) {
                 val isSharing = snapshot.child("isSharing").getValue(Boolean::class.java) ?: false
                 _isSharingLocation.value = isSharing
+                Log.d(TAG, "Location sharing status: $isSharing")
             }
 
             override fun onCancelled(error: DatabaseError) {

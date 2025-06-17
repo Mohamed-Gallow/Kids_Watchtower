@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.R
+import com.example.gomahrepoproject.main.data.AppModel
 
 class BlockAppAdapter(
     private val onAppClick: (AppModel) -> Unit
@@ -45,7 +46,7 @@ class BlockAppAdapter(
             }
 
             // Optional: change icon color to indicate status
-            val indicatorRes = if (app.isBlocked) R.drawable.ic_blocked else R.drawable.circle_bg
+            val indicatorRes = if (app.isBlocked) R.drawable.remove_btn else R.drawable.add_app_btn
             statusIndicator.setImageResource(indicatorRes)
 
             itemView.setOnClickListener {

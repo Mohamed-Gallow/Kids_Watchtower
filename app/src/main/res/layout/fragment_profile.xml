@@ -43,6 +43,7 @@
     <Button
         android:id="@+id/btnEditProfile"
         android:layout_width="wrap_content"
+        android:textColor="@color/white"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:background="@drawable/parent_btn"
@@ -75,6 +76,7 @@
 
                 <ImageView
                     android:layout_width="24dp"
+                    android:padding="2dp"
                     android:src="@drawable/light_dark_mode"
                     android:layout_height="24dp"/>
 
