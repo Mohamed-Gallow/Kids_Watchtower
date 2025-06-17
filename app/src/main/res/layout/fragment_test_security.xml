@@ -24,6 +24,7 @@
             android:layout_marginStart="16dp"
             android:contentDescription="Back button"
             app:tint="@android:color/white" />
+
     </androidx.appcompat.widget.Toolbar>
 
     <!-- URL Input Section - improved with ConstraintLayout -->

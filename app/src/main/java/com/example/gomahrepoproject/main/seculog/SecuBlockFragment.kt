@@ -70,7 +70,9 @@ class SecuBlockFragment : Fragment() {
     }
 
     private fun initViews(){
-        findNavController().navigate(R.id.action_secuLogFragment_to_testSecuFragment)
+        binding.btnTest.setOnClickListener {
+          findNavController().navigate(R.id.action_secuLogFragment_to_testSecuFragment3)
+        }
     }
 
     private fun listenForBlockedSites() {

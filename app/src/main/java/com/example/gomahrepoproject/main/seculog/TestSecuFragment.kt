@@ -52,7 +52,7 @@ class TestSecuFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_test_secu, container, false)
+        val view = inflater.inflate(R.layout.fragment_test_security, container, false)
         initializeViews(view)
         setupWebView()
         setupButtonListeners(view)
