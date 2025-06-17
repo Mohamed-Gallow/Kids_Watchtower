@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@android:color/white"
     android:orientation="vertical"
-    tools:context=".main.seculog.TestSecuFragment">
+    tools:context=".main.seculog.ChildSearchFragment">
 
     <!-- Toolbar with back button -->
     <androidx.appcompat.widget.Toolbar
