@@ -28,15 +28,16 @@ class TimeRangeMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        monitoredApps = intent?.let {
-            val appName = it.getStringExtra("APP_NAME") ?: "YouTube"
-            val pkg = it.getStringExtra("PACKAGE_NAME") ?: "com.google.android.youtube"
-            val sh = it.getIntExtra("START_HOUR", 9)
-            val sm = it.getIntExtra("START_MIN", 0)
-            val eh = it.getIntExtra("END_HOUR", 17)
-            val em = it.getIntExtra("END_MIN", 0)
-            listOf(AppTimeRange(appName, pkg, sh, sm, eh, em))
-        } ?: listOf(AppTimeRange("YouTube", "com.google.android.youtube", 9, 0, 17, 0))
+        monitoredApps = intent?.getSerializableExtra("APP_LIST") as? ArrayList<AppTimeRange>
+            ?: intent?.let {
+                val appName = it.getStringExtra("APP_NAME") ?: "YouTube"
+                val pkg = it.getStringExtra("PACKAGE_NAME") ?: "com.google.android.youtube"
+                val sh = it.getIntExtra("START_HOUR", 9)
+                val sm = it.getIntExtra("START_MIN", 0)
+                val eh = it.getIntExtra("END_HOUR", 17)
+                val em = it.getIntExtra("END_MIN", 0)
+                arrayListOf(AppTimeRange(appName, pkg, sh, sm, eh, em))
+            } ?: listOf(AppTimeRange("YouTube", "com.google.android.youtube", 9, 0, 17, 0))
 
         handler.post(checkRunnable)
         return START_STICKY

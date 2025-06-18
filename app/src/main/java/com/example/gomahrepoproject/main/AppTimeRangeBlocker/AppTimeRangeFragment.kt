@@ -1,6 +1,8 @@
 package com.example.gomahrepoproject.main.AppTimeRangeBlocker
 
 import android.content.Intent
+import android.widget.ArrayAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +19,9 @@ class AppTimeRangeFragment : Fragment() {
     private var _binding: FragmentAppTimeRangeBinding? = null
     private val binding get() = _binding!!
     private val usageTracker by lazy { AppUsageTracker(requireContext()) }
+    private val appRanges = mutableListOf<AppTimeRange>()
+    private lateinit var adapter: AppRangeAdapter
+    private var installedApps: List<Pair<String, String>> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +42,29 @@ class AppTimeRangeFragment : Fragment() {
         binding.endTimePicker.hour = 17
         binding.endTimePicker.minute = 0
 
+        setupInstalledApps()
+
+        adapter = AppRangeAdapter(appRanges)
+        binding.appList.layoutManager = LinearLayoutManager(requireContext())
+        binding.appList.adapter = adapter
+
+        binding.btnAddApp.setOnClickListener {
+            val pos = binding.appSpinner.selectedItemPosition
+            if (pos in installedApps.indices) {
+                val app = installedApps[pos]
+                val range = AppTimeRange(
+                    app.first,
+                    app.second,
+                    binding.startTimePicker.hour,
+                    binding.startTimePicker.minute,
+                    binding.endTimePicker.hour,
+                    binding.endTimePicker.minute
+                )
+                appRanges.add(range)
+                adapter.updateData()
+            }
+        }
+
         binding.btnStartMonitor.setOnClickListener {
             if (!usageTracker.hasUsageAccessPermission()) {
                 usageTracker.requestUsageAccessPermission()
@@ -44,17 +72,29 @@ class AppTimeRangeFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            if (appRanges.isEmpty()) {
+                Toast.makeText(requireContext(), "Add at least one app", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val intent = Intent(requireContext(), TimeRangeMonitorService::class.java).apply {
-                putExtra("APP_NAME", "YouTube")
-                putExtra("PACKAGE_NAME", "com.google.android.youtube")
-                putExtra("START_HOUR", binding.startTimePicker.hour)
-                putExtra("START_MIN", binding.startTimePicker.minute)
-                putExtra("END_HOUR", binding.endTimePicker.hour)
-                putExtra("END_MIN", binding.endTimePicker.minute)
+                putExtra("APP_LIST", ArrayList(appRanges))
             }
             requireContext().startService(intent)
             Toast.makeText(requireContext(), "Time range monitoring started", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun setupInstalledApps() {
+        val pm = requireContext().packageManager
+        installedApps = pm.getInstalledApplications(0)
+            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+            .map { it.loadLabel(pm).toString() to it.packageName }
+
+        val appNames = installedApps.map { it.first }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, appNames)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.appSpinner.adapter = adapter
     }
 
     override fun onDestroyView() {
