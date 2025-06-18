@@ -280,7 +280,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Spend 12 hours"
+                        android:text="Spent 12 hours"
                         android:textColor="@color/lightBlack"
                         android:textStyle="bold"
                         app:layout_constraintBottom_toBottomOf="parent"
