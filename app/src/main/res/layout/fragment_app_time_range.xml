@@ -7,10 +7,29 @@
     android:background="@color/backgroundWhite">
 
     <TextView
-        android:id="@+id/tvPlaceholder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="App Time Range Access Control coming soon"
+        android:text="Configure allowed time range for YouTube"
         android:textSize="18sp"
         android:textColor="@color/black" />
+
+    <TimePicker
+        android:id="@+id/startTimePicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:timePickerMode="spinner"
+        android:is24HourView="true" />
+
+    <TimePicker
+        android:id="@+id/endTimePicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:timePickerMode="spinner"
+        android:is24HourView="true" />
+
+    <Button
+        android:id="@+id/btnStartMonitor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Monitoring" />
 </LinearLayout>
