@@ -2,6 +2,7 @@ package com.example.gomahrepoproject.main.AppTimeRangeBlocker
 
 import android.app.Activity
 import android.os.Bundle
+import android.view.Window
 import android.widget.TextView
 import com.example.gomahrepoproject.R
 
@@ -12,6 +13,7 @@ class TimeRangeBlockedActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.activity_time_range_blocked)
 
         val appName = intent.getStringExtra("APP_NAME") ?: "This app"
