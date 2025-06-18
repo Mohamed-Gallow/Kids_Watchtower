@@ -13,6 +13,9 @@ import androidx.fragment.app.viewModels
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.TimeRangeViewModel
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppRangeAdapter
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppTimeRange
+import android.provider.Settings
+import android.content.Intent
+import com.example.gomahrepoproject.main.blockapps.AppMonitoringService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -48,6 +51,7 @@ class AppTimeRangeFragment : Fragment() {
                         userRole = snapshot.getValue(String::class.java)
                         if (userRole == "child") {
                             setupChildUi()
+                            checkAndPromptAccessibilityPermission()
                         } else {
                             setupParentUi()
                         }
@@ -144,5 +148,27 @@ class AppTimeRangeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun checkAndPromptAccessibilityPermission() {
+        if (!isAccessibilityServiceEnabled()) {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            Toast.makeText(
+                requireContext(),
+                "Please enable Accessibility Service for monitoring",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val enabledServices = Settings.Secure.getString(
+            requireContext().contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(
+            "${requireContext().packageName}/${AppMonitoringService::class.java.name}"
+        )
     }
 }

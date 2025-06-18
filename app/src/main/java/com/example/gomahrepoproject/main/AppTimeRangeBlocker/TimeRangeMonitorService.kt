@@ -7,6 +7,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
+import android.widget.Toast
+import com.example.gomahrepoproject.main.blockapps.AppMonitoringService
 import com.example.gomahrepoproject.main.blockapps.AppUsageTracker
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
@@ -85,6 +87,17 @@ class TimeRangeMonitorService : Service() {
         if (!usageTracker.hasUsageAccessPermission()) {
             usageTracker.requestUsageAccessPermission()
         }
+        if (!isAccessibilityServiceEnabled()) {
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+            Toast.makeText(
+                this,
+                "Please enable Accessibility Service for monitoring",
+                Toast.LENGTH_LONG
+            ).show()
+        }
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -93,6 +106,16 @@ class TimeRangeMonitorService : Service() {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
         }
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(
+            "$packageName/${AppMonitoringService::class.java.name}"
+        )
     }
 
     private fun isWithinAllowedTime(range: AppTimeRange): Boolean {
