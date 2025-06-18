@@ -2,10 +2,14 @@ package com.example.gomahrepoproject.main.AppTimeRangeBlocker
 
 import android.app.Service
 import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import com.example.gomahrepoproject.main.blockapps.AppUsageTracker
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 import java.util.Calendar
 
 /**
@@ -24,27 +28,28 @@ class TimeRangeMonitorService : Service() {
     }
 
     private var monitoredApps: List<AppTimeRange> = emptyList()
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseDatabase.getInstance().reference
+    private var listener: ValueEventListener? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         monitoredApps = intent?.getSerializableExtra("APP_LIST") as? ArrayList<AppTimeRange>
-            ?: intent?.let {
-                val appName = it.getStringExtra("APP_NAME") ?: "YouTube"
-                val pkg = it.getStringExtra("PACKAGE_NAME") ?: "com.google.android.youtube"
-                val sh = it.getIntExtra("START_HOUR", 9)
-                val sm = it.getIntExtra("START_MIN", 0)
-                val eh = it.getIntExtra("END_HOUR", 17)
-                val em = it.getIntExtra("END_MIN", 0)
-                arrayListOf(AppTimeRange(appName, pkg, sh, sm, eh, em))
-            } ?: listOf(AppTimeRange("YouTube", "com.google.android.youtube", 9, 0, 17, 0))
+            ?: monitoredApps
 
+        ensurePermissions()
+        listenForRules()
         handler.post(checkRunnable)
         return START_STICKY
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(checkRunnable)
+        listener?.let {
+            val childId = auth.currentUser?.uid ?: return
+            db.child("users").child(childId).child("timeRangeRules").removeEventListener(it)
+        }
         super.onDestroy()
     }
 
@@ -59,6 +64,34 @@ class TimeRangeMonitorService : Service() {
                 putExtra("END_TIME", timeToString(appRange.endHour, appRange.endMinute))
             }
             startActivity(overlay)
+        }
+    }
+
+    private fun listenForRules() {
+        val childId = auth.currentUser?.uid ?: return
+        listener?.let { db.child("users").child(childId).child("timeRangeRules").removeEventListener(it) }
+        val l = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                monitoredApps = snapshot.children.mapNotNull { it.getValue(AppTimeRange::class.java) }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        db.child("users").child(childId).child("timeRangeRules").addValueEventListener(l)
+        listener = l
+    }
+
+    private fun ensurePermissions() {
+        if (!usageTracker.hasUsageAccessPermission()) {
+            usageTracker.requestUsageAccessPermission()
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
         }
     }
 

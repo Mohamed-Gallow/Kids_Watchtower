@@ -18,7 +18,10 @@ class AppUsageTracker(private val context: Context) {
     }
 
     fun requestUsageAccessPermission() {
-        context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
     }
 
     fun getForegroundApp(): String? {

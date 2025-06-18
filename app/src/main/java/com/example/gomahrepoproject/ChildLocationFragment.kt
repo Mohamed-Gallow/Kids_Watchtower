@@ -32,6 +32,10 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import android.provider.Settings
+import android.net.Uri
+import com.example.gomahrepoproject.main.blockapps.AppMonitoringService
+import com.example.gomahrepoproject.main.blockapps.AppUsageTracker
 
 class ChildLocationFragment : Fragment(), OnMapReadyCallback {
     private var _binding: FragmentChildLocationBinding? = null
@@ -90,6 +94,7 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
         val mapFragment = childFragmentManager.findFragmentById(R.id.childMap) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
 
+        checkEssentialPermissions()
         timeRangeViewModel.listenForRules()
 
         locationViewModel.listenForLocationSharing()
@@ -167,6 +172,33 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
 
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun checkEssentialPermissions() {
+        if (!isAccessibilityServiceEnabled()) {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        val tracker = AppUsageTracker(requireContext())
+        if (!tracker.hasUsageAccessPermission()) {
+            tracker.requestUsageAccessPermission()
+        }
+        if (!Settings.canDrawOverlays(requireContext())) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:${requireContext().packageName}")
+            )
+            startActivity(intent)
+        }
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val enabled = Settings.Secure.getString(
+            requireContext().contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabled.contains(
+            "${requireContext().packageName}/${AppMonitoringService::class.java.name}"
+        )
     }
 
     override fun onMapReady(map: GoogleMap) {

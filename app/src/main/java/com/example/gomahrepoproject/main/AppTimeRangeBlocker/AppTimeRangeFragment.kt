@@ -13,6 +13,8 @@ import androidx.fragment.app.viewModels
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.TimeRangeViewModel
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppRangeAdapter
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppTimeRange
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 
 /**
  * Placeholder fragment for App Time Range feature.
@@ -24,6 +26,7 @@ class AppTimeRangeFragment : Fragment() {
     private val viewModel: TimeRangeViewModel by viewModels()
     private lateinit var adapter: AppRangeAdapter
     private var installedApps: List<Pair<String, String>> = emptyList()
+    private var userRole: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +40,29 @@ class AppTimeRangeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            FirebaseDatabase.getInstance().reference.child("users").child(userId).child("role")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        userRole = snapshot.getValue(String::class.java)
+                        if (userRole == "child") {
+                            setupChildUi()
+                        } else {
+                            setupParentUi()
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        setupParentUi()
+                    }
+                })
+        } else {
+            setupParentUi()
+        }
+    }
+
+    private fun setupParentUi() {
         binding.startTimePicker.setIs24HourView(true)
         binding.endTimePicker.setIs24HourView(true)
         binding.startTimePicker.hour = 9
@@ -82,6 +108,25 @@ class AppTimeRangeFragment : Fragment() {
             viewModel.saveRulesToChild(appRanges)
             Toast.makeText(requireContext(), "Time ranges sent to child", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun setupChildUi() {
+        binding.appSpinner.visibility = View.GONE
+        binding.btnAddApp.visibility = View.GONE
+        binding.startTimePicker.visibility = View.GONE
+        binding.endTimePicker.visibility = View.GONE
+        binding.btnStartMonitor.visibility = View.GONE
+
+        adapter = AppRangeAdapter(appRanges)
+        binding.appList.layoutManager = LinearLayoutManager(requireContext())
+        binding.appList.adapter = adapter
+
+        viewModel.rules.observe(viewLifecycleOwner) { rules ->
+            appRanges.clear()
+            appRanges.addAll(rules)
+            adapter.updateData()
+        }
+        viewModel.listenForRules()
     }
 
     private fun setupInstalledApps() {
