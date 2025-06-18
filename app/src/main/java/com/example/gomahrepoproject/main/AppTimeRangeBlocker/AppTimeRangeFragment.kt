@@ -1,6 +1,5 @@
 package com.example.gomahrepoproject.main.AppTimeRangeBlocker
 
-import android.content.Intent
 import android.widget.ArrayAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import android.os.Bundle
@@ -10,7 +9,10 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.gomahrepoproject.databinding.FragmentAppTimeRangeBinding
-import com.example.gomahrepoproject.main.blockapps.AppUsageTracker
+import androidx.fragment.app.viewModels
+import com.example.gomahrepoproject.main.AppTimeRangeBlocker.TimeRangeViewModel
+import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppRangeAdapter
+import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppTimeRange
 
 /**
  * Placeholder fragment for App Time Range feature.
@@ -18,8 +20,8 @@ import com.example.gomahrepoproject.main.blockapps.AppUsageTracker
 class AppTimeRangeFragment : Fragment() {
     private var _binding: FragmentAppTimeRangeBinding? = null
     private val binding get() = _binding!!
-    private val usageTracker by lazy { AppUsageTracker(requireContext()) }
     private val appRanges = mutableListOf<AppTimeRange>()
+    private val viewModel: TimeRangeViewModel by viewModels()
     private lateinit var adapter: AppRangeAdapter
     private var installedApps: List<Pair<String, String>> = emptyList()
 
@@ -60,28 +62,25 @@ class AppTimeRangeFragment : Fragment() {
                     binding.endTimePicker.hour,
                     binding.endTimePicker.minute
                 )
-                appRanges.add(range)
+                val index = appRanges.indexOfFirst { it.packageName == app.second }
+                if (index >= 0) {
+                    appRanges[index] = range
+                    Toast.makeText(requireContext(), "Updated ${app.first}", Toast.LENGTH_SHORT).show()
+                } else {
+                    appRanges.add(range)
+                }
                 adapter.updateData()
             }
         }
 
         binding.btnStartMonitor.setOnClickListener {
-            if (!usageTracker.hasUsageAccessPermission()) {
-                usageTracker.requestUsageAccessPermission()
-                Toast.makeText(requireContext(), "Grant Usage Access and try again", Toast.LENGTH_LONG).show()
-                return@setOnClickListener
-            }
-
             if (appRanges.isEmpty()) {
                 Toast.makeText(requireContext(), "Add at least one app", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val intent = Intent(requireContext(), TimeRangeMonitorService::class.java).apply {
-                putExtra("APP_LIST", ArrayList(appRanges))
-            }
-            requireContext().startService(intent)
-            Toast.makeText(requireContext(), "Time range monitoring started", Toast.LENGTH_SHORT).show()
+            viewModel.saveRulesToChild(appRanges)
+            Toast.makeText(requireContext(), "Time ranges sent to child", Toast.LENGTH_SHORT).show()
         }
     }
 
