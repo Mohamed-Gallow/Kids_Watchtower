@@ -10,6 +10,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.example.gomahrepoproject.main.AppTimeRangeBlocker.TimeRangeMonitorService
 
 class BootReceiver : BroadcastReceiver() {
     companion object {
@@ -30,13 +31,19 @@ class BootReceiver : BroadcastReceiver() {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val role = snapshot.getValue(String::class.java)
                         if (role == "child") {
-                            val serviceIntent = Intent(context, LocationService::class.java)
+                            val locIntent = Intent(context, LocationService::class.java)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                context.startForegroundService(serviceIntent)
+                                context.startForegroundService(locIntent)
                             } else {
-                                context.startService(serviceIntent)
+                                context.startService(locIntent)
                             }
-                            Log.d(TAG, "Started LocationService after boot")
+                            val rangeIntent = Intent(context, TimeRangeMonitorService::class.java)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                context.startForegroundService(rangeIntent)
+                            } else {
+                                context.startService(rangeIntent)
+                            }
+                            Log.d(TAG, "Started LocationService and TimeRangeMonitorService after boot")
                         }
                     }
                     override fun onCancelled(error: DatabaseError) {
