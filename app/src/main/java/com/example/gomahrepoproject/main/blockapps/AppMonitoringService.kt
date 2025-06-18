@@ -2,12 +2,11 @@ package com.example.gomahrepoproject.main.blockapps
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppTimeRange
-import com.example.gomahrepoproject.main.AppTimeRangeBlocker.TimeRangeBlockedActivity
 import com.example.gomahrepoproject.main.blockapps.AppUploader
+import com.example.gomahrepoproject.main.blockapps.BlockingOverlay
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -127,23 +126,19 @@ class AppMonitoringService : AccessibilityService() {
     }
 
     private fun launchTimeRangeScreen(rule: AppTimeRange) {
-        val intent = Intent(this, TimeRangeBlockedActivity::class.java).apply {
-            putExtra("APP_NAME", rule.appName)
-            putExtra("START_TIME", String.format("%02d:%02d", rule.startHour, rule.startMinute))
-            putExtra("END_TIME", String.format("%02d:%02d", rule.endHour, rule.endMinute))
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-        startActivity(intent)
+        val msg = "${rule.appName} is allowed only between " +
+                String.format("%02d:%02d", rule.startHour, rule.startMinute) +
+                " and " +
+                String.format("%02d:%02d", rule.endHour, rule.endMinute)
+        BlockingOverlay.show(this, msg)
     }
 
     private fun launchBlockScreen(blockedApp: String) {
-        val intent = Intent(this, BlockedAppActivity::class.java)
-        intent.putExtra("BLOCKED_APP_NAME", blockedApp)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        startActivity(intent)
+        val msg = "Access to \"$blockedApp\" is blocked by your parent."
+        BlockingOverlay.show(this, msg)
     }
 
     override fun onInterrupt() {
-        // Required method, can be left empty
+        BlockingOverlay.hide()
     }
 }
