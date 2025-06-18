@@ -5,17 +5,18 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gomahrepoproject.databinding.ItemBlockedSiteBinding
 import androidx.recyclerview.widget.DiffUtil
+import com.example.gomahrepoproject.databinding.SecuBlockItemBinding
 
 class BlockedSitesAdapter(
     private val blockedSites: MutableList<String> = mutableListOf(),
     private val onRemoveClicked: (String) -> Unit
 ) : RecyclerView.Adapter<BlockedSitesAdapter.BlockedSitesViewHolder>() {
 
-    inner class BlockedSitesViewHolder(val binding: ItemBlockedSiteBinding) :
+    inner class BlockedSitesViewHolder(val binding: SecuBlockItemBinding) :
         RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockedSitesViewHolder {
-        val binding = ItemBlockedSiteBinding.inflate(
+        val binding = SecuBlockItemBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
@@ -25,8 +26,8 @@ class BlockedSitesAdapter(
 
     override fun onBindViewHolder(holder: BlockedSitesViewHolder, position: Int) {
         val url = blockedSites[position]
-        holder.binding.tvUrl.text = url
-        holder.binding.btnRemove.setOnClickListener {
+        holder.binding.tvSiteUrl.text = url
+        holder.binding.unBlockIcon.setOnClickListener {
             onRemoveClicked(url)
         }
     }

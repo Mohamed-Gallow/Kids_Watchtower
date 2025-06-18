@@ -78,6 +78,7 @@
                 android:layout_width="33dp"
                 android:layout_height="33dp"
                 android:src="@drawable/device_management"/>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:textStyle="bold"
@@ -85,6 +86,7 @@
                 android:textSize="12sp"
                 android:layout_height="wrap_content"
                 android:text="Link Device"/>
+
         </LinearLayout>
         <LinearLayout
             android:layout_marginTop="16sp"
