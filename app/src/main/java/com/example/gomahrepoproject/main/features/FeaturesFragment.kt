@@ -45,6 +45,10 @@ class FeaturesFragment : Fragment() {
             this@FeaturesFragment.findNavController()
                 .navigate(R.id.action_featuresFragment_to_blockAppsFragment)
         }
+        binding.btnNavToAppBlockTime.setOnClickListener {
+            this@FeaturesFragment.findNavController()
+                .navigate(R.id.action_featuresFragment_to_appTimeRangeFragment)
+        }
         binding.btnNavToSecurityLog.setOnClickListener {
             this@FeaturesFragment.findNavController()
                 .navigate(R.id.action_featuresFragment_to_secuLogFragment)
