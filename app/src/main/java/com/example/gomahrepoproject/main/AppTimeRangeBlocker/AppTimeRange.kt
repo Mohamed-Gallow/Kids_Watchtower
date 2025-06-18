@@ -6,10 +6,10 @@ package com.example.gomahrepoproject.main.AppTimeRangeBlocker
 import java.io.Serializable
 
 data class AppTimeRange(
-    val appName: String,
-    val packageName: String,
-    val startHour: Int,
-    val startMinute: Int,
-    val endHour: Int,
-    val endMinute: Int
+    val appName: String = "",
+    val packageName: String = "",
+    val startHour: Int = 0,
+    val startMinute: Int = 0,
+    val endHour: Int = 0,
+    val endMinute: Int = 0
 ) : Serializable

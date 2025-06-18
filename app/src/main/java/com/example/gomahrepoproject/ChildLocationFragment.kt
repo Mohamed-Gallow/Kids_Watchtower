@@ -18,6 +18,7 @@ import com.example.gomahrepoproject.databinding.FragmentChildLocationBinding
 import com.example.gomahrepoproject.main.location.LocationModel
 import com.example.gomahrepoproject.main.location.LocationService
 import com.example.gomahrepoproject.main.location.LocationViewModel
+import com.example.gomahrepoproject.main.AppTimeRangeBlocker.TimeRangeViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -36,6 +37,7 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
     private var _binding: FragmentChildLocationBinding? = null
     private val binding get() = _binding!!
     private val locationViewModel: LocationViewModel by viewModels()
+    private val timeRangeViewModel: TimeRangeViewModel by viewModels()
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var googleMap: GoogleMap
@@ -87,6 +89,8 @@ class ChildLocationFragment : Fragment(), OnMapReadyCallback {
 
         val mapFragment = childFragmentManager.findFragmentById(R.id.childMap) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
+
+        timeRangeViewModel.listenForRules()
 
         locationViewModel.listenForLocationSharing()
         locationViewModel.isSharingLocation.observe(viewLifecycleOwner) { isSharing ->
