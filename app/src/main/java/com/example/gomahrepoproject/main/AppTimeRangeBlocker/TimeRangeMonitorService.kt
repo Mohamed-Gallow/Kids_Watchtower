@@ -10,6 +10,7 @@ import android.provider.Settings
 import android.widget.Toast
 import com.example.gomahrepoproject.main.blockapps.AppMonitoringService
 import com.example.gomahrepoproject.main.blockapps.AppUsageTracker
+import com.example.gomahrepoproject.main.blockapps.BlockingOverlay
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import java.util.Calendar
@@ -52,20 +53,24 @@ class TimeRangeMonitorService : Service() {
             val childId = auth.currentUser?.uid ?: return
             db.child("users").child(childId).child("timeRangeRules").removeEventListener(it)
         }
+        if (BlockingOverlay.isShowing) {
+            BlockingOverlay.hide()
+        }
         super.onDestroy()
     }
 
     private fun checkForegroundApp() {
         val pkg = usageTracker.getForegroundApp() ?: return
-        val appRange = monitoredApps.firstOrNull { it.packageName == pkg } ?: return
-        if (!isWithinAllowedTime(appRange)) {
-            val overlay = Intent(this, TimeRangeBlockedActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra("APP_NAME", appRange.appName)
-                putExtra("START_TIME", timeToString(appRange.startHour, appRange.startMinute))
-                putExtra("END_TIME", timeToString(appRange.endHour, appRange.endMinute))
+        val appRange = monitoredApps.firstOrNull { it.packageName == pkg }
+        if (appRange != null && !isWithinAllowedTime(appRange)) {
+            val msg = "${appRange.appName} is allowed only between " +
+                    timeToString(appRange.startHour, appRange.startMinute) + " and " +
+                    timeToString(appRange.endHour, appRange.endMinute)
+            BlockingOverlay.show(this, msg)
+        } else {
+            if (BlockingOverlay.isShowing) {
+                BlockingOverlay.hide()
             }
-            startActivity(overlay)
         }
     }
 

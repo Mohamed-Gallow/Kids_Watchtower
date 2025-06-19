@@ -107,6 +107,10 @@ class AppMonitoringService : AccessibilityService() {
         if (rule != null && !isWithinAllowedTime(rule)) {
             Log.d("AppMonitor", "App $packageName outside allowed time range")
             launchTimeRangeScreen(rule)
+        } else {
+            if (BlockingOverlay.isShowing) {
+                BlockingOverlay.hide()
+            }
         }
     }
 

@@ -12,6 +12,8 @@ import com.example.gomahrepoproject.R
 object BlockingOverlay {
     private var windowManager: WindowManager? = null
     private var overlayView: View? = null
+    var isShowing: Boolean = false
+        private set
 
     fun show(context: Context, message: String) {
         if (overlayView != null) return
@@ -39,12 +41,14 @@ object BlockingOverlay {
         overlayView?.findViewById<TextView>(R.id.overlayText)?.text = message
 
         windowManager?.addView(overlayView, params)
+        isShowing = true
     }
 
     fun hide() {
         overlayView?.let {
             windowManager?.removeView(it)
             overlayView = null
+            isShowing = false
         }
     }
 }
