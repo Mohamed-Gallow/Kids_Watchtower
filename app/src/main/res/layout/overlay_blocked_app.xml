@@ -4,14 +4,6 @@
     android:layout_height="match_parent"
     android:background="#CC000000">
 
-    <ImageView
-        android:id="@+id/overlayClose"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_alignParentStart="true"
-        android:layout_margin="16dp"
-        android:src="@drawable/left_arrow" />
-
     <TextView
         android:id="@+id/overlayText"
         android:layout_width="wrap_content"

@@ -6,7 +6,6 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.widget.ImageView
 import android.widget.TextView
 import com.example.gomahrepoproject.R
 
@@ -38,7 +37,6 @@ object BlockingOverlay {
         val inflater = LayoutInflater.from(context)
         overlayView = inflater.inflate(R.layout.overlay_blocked_app, null)
         overlayView?.findViewById<TextView>(R.id.overlayText)?.text = message
-        overlayView?.findViewById<ImageView>(R.id.overlayClose)?.setOnClickListener { hide() }
 
         windowManager?.addView(overlayView, params)
     }

@@ -17,6 +17,7 @@ import android.provider.Settings
 import android.content.Intent
 import com.example.gomahrepoproject.main.blockapps.AppMonitoringService
 import com.google.firebase.auth.FirebaseAuth
+import com.example.gomahrepoproject.main.data.AppModel
 import com.google.firebase.database.*
 
 /**
@@ -74,7 +75,7 @@ class AppTimeRangeFragment : Fragment() {
         binding.endTimePicker.hour = 17
         binding.endTimePicker.minute = 0
 
-        setupInstalledApps()
+        fetchChildInstalledApps()
 
         adapter = AppRangeAdapter(appRanges)
         binding.appList.layoutManager = LinearLayoutManager(requireContext())
@@ -133,12 +134,31 @@ class AppTimeRangeFragment : Fragment() {
         viewModel.listenForRules()
     }
 
-    private fun setupInstalledApps() {
-        val pm = requireContext().packageManager
-        installedApps = pm.getInstalledApplications(0)
-            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
-            .map { it.loadLabel(pm).toString() to it.packageName }
+    private fun fetchChildInstalledApps() {
+        val parentId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val dbRef = FirebaseDatabase.getInstance().reference
 
+        dbRef.child("users").child(parentId).child("linkedAccounts").child("childId")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val childId = snapshot.getValue(String::class.java) ?: return
+                    dbRef.child("users").child(childId).child("installedApps")
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(appSnap: DataSnapshot) {
+                                installedApps = appSnap.children.mapNotNull { it.getValue(AppModel::class.java) }
+                                    .map { it.appName to it.packageName }
+                                updateSpinner()
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {}
+                        })
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    private fun updateSpinner() {
         val appNames = installedApps.map { it.first }
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, appNames)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
