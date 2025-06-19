@@ -39,7 +39,7 @@ class TimeRangeMonitorService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         monitoredApps = intent?.getSerializableExtra("APP_LIST") as? ArrayList<AppTimeRange>
-            ?: monitoredApps
+            ?: emptyList()
 
         ensurePermissions()
         listenForRules()
