@@ -20,9 +20,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.example.gomahrepoproject.main.data.AppModel
 import com.google.firebase.database.*
 
-/**
- * Placeholder fragment for App Time Range feature.
- */
+
 class AppTimeRangeFragment : Fragment() {
     private var _binding: FragmentAppTimeRangeBinding? = null
     private val binding get() = _binding!!
@@ -66,6 +64,7 @@ class AppTimeRangeFragment : Fragment() {
             setupParentUi()
         }
     }
+
 
     private fun setupParentUi() {
         binding.startTimePicker.setIs24HourView(true)

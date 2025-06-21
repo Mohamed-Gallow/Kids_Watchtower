@@ -2,6 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:gravity="center"
     android:padding="16dp"
@@ -10,6 +12,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textStyle="bold"
         android:text="Select app and allowed time range"
         android:textSize="18sp"
         android:textColor="@color/black" />
@@ -38,7 +41,9 @@
         android:id="@+id/btnAddApp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/login_btn_bg"
         android:layout_marginTop="12dp"
+        app:backgroundTint="@null"
         android:text="Add App" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -50,7 +55,10 @@
 
     <Button
         android:id="@+id/btnStartMonitor"
+        android:background="@drawable/login_btn_bg"
         android:layout_width="wrap_content"
+        app:backgroundTint="@null"
+        tools:listitem="@layout/item_app_range"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="Start Monitoring" />
