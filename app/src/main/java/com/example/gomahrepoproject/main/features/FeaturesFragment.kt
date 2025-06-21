@@ -11,8 +11,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.gomahrepoproject.R
+import com.example.gomahrepoproject.auth.AuthViewModel
 import com.example.gomahrepoproject.databinding.FragmentFeaturesBinding
 import com.example.gomahrepoproject.main.features.LockListenerService
 import com.google.firebase.auth.FirebaseAuth
@@ -22,6 +24,7 @@ class FeaturesFragment : Fragment() {
 
     private var _binding: FragmentFeaturesBinding? = null
     private val binding get() = _binding!!
+    private val authViewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,9 +55,54 @@ class FeaturesFragment : Fragment() {
         binding.btnNavToAppBlock.setOnClickListener {
             findNavController().navigate(R.id.action_featuresFragment_to_blockAppsFragment)
         }
+
+        // Set up button click listener
         binding.btnNavToSecurityLog.setOnClickListener {
-            findNavController().navigate(R.id.action_featuresFragment_to_secuLogFragment)
+            // Get the current user from AuthViewModel
+            authViewModel.authState.observe(viewLifecycleOwner) { firebaseUser ->
+                if (firebaseUser != null) {
+                    // Fetch the user's role from Firebase Realtime Database
+                    val userId = firebaseUser.uid
+                    FirebaseDatabase.getInstance().getReference("users").child(userId).child("role")
+                        .get()
+                        .addOnSuccessListener { dataSnapshot ->
+                            val role = dataSnapshot.getValue(String::class.java)
+                            when (role) {
+                                "parent" -> {
+                                    findNavController().navigate(R.id.action_featuresFragment_to_secuLogFragment)
+                                }
+
+                                "child" -> {
+                                    findNavController().navigate(R.id.action_featuresFragment_to_testSecuFragment3)
+                                }
+
+                                else -> {
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "Role not recognized",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(
+                                requireContext(),
+                                "Failed to fetch role",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "User not logged in",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
+
+
         binding.btnNavToAppBlockTime.setOnClickListener {
             findNavController().navigate(R.id.action_featuresFragment_to_appTimeRangeFragment)
         }
@@ -66,40 +114,62 @@ class FeaturesFragment : Fragment() {
         val currentUid = user.uid
         val database = FirebaseDatabase.getInstance().reference
 
-        database.child("users").child(currentUid).child("role").get().addOnSuccessListener { snapshot ->
-            val userRole = snapshot.getValue(String::class.java)
+        database.child("users").child(currentUid).child("role").get()
+            .addOnSuccessListener { snapshot ->
+                val userRole = snapshot.getValue(String::class.java)
 
-            binding.btnLockDevice.setOnClickListener {
-                if (userRole == "parent") {
-                    database.child("users").child(currentUid).child("linkedAccounts")
-                        .get().addOnSuccessListener { linkedSnapshot ->
-                            val childId = linkedSnapshot.child("childId").getValue(String::class.java)
-                            if (childId != null) {
-                                val lockSignal = mapOf(
-                                    "isLocked" to true,
-                                    "lockedBy" to currentUid,
-                                    "lockTime" to System.currentTimeMillis()
-                                )
+                binding.btnLockDevice.setOnClickListener {
+                    if (userRole == "parent") {
+                        database.child("users").child(currentUid).child("linkedAccounts")
+                            .get().addOnSuccessListener { linkedSnapshot ->
+                                val childId =
+                                    linkedSnapshot.child("childId").getValue(String::class.java)
+                                if (childId != null) {
+                                    val lockSignal = mapOf(
+                                        "isLocked" to true,
+                                        "lockedBy" to currentUid,
+                                        "lockTime" to System.currentTimeMillis()
+                                    )
 
-                                database.child("users").child(childId).child("deviceStatus")
-                                    .setValue(lockSignal)
-                                    .addOnSuccessListener {
-                                        Toast.makeText(requireContext(), "Child device locked successfully", Toast.LENGTH_SHORT).show()
-                                    }
-                                    .addOnFailureListener { error ->
-                                        Toast.makeText(requireContext(), "Failed to lock device: ${error.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                            } else {
-                                Toast.makeText(requireContext(), "No child account linked to this user", Toast.LENGTH_SHORT).show()
+                                    database.child("users").child(childId).child("deviceStatus")
+                                        .setValue(lockSignal)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(
+                                                requireContext(),
+                                                "Child device locked successfully",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        .addOnFailureListener { error ->
+                                            Toast.makeText(
+                                                requireContext(),
+                                                "Failed to lock device: ${error.message}",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                } else {
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "No child account linked to this user",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }.addOnFailureListener { error ->
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Failed to retrieve child data: ${error.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        }.addOnFailureListener { error ->
-                            Toast.makeText(requireContext(), "Failed to retrieve child data: ${error.message}", Toast.LENGTH_SHORT).show()
-                        }
-                } else {
-                    Toast.makeText(requireContext(), "This button is only available for parents", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "This button is only available for parents",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
-        }
     }
 
     private fun startLockListenerServiceIfChild() {
@@ -114,7 +184,8 @@ class FeaturesFragment : Fragment() {
                 requireContext().startService(intent)
 
                 // التحقق من صلاحية Device Admin
-                val dpm = requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                val dpm =
+                    requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
                 val component = ComponentName(requireContext(), DeviceAdminReceiver::class.java)
                 if (!dpm.isAdminActive(component)) {
                     requestDeviceAdminPermission()
@@ -127,7 +198,10 @@ class FeaturesFragment : Fragment() {
         val componentName = ComponentName(requireContext(), DeviceAdminReceiver::class.java)
         val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
             putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-            putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,  "Required to allow remote device locking")
+            putExtra(
+                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                "Required to allow remote device locking"
+            )
         }
         startActivity(intent)
     }
