@@ -62,6 +62,10 @@
             android:id="@+id/action_featuresFragment_to_testSecuFragment3"
             app:destination="@id/testSecuFragment3" />
 
+        <action
+            android:id="@+id/action_featuresFragment_to_appTimeRangeFragment"
+            app:destination="@id/appTimeRangeFragment" />
+
     </fragment>
 
     <fragment
@@ -85,6 +89,11 @@
         android:label="fragment_block_apps"
         tools:layout="@layout/fragment_block_apps"
         />
+    <fragment
+        android:id="@+id/appTimeRangeFragment"
+        android:name="com.example.gomahrepoproject.main.AppTimeRangeBlocker.AppTimeRangeFragment"
+        android:label="fragment_app_time_range"
+        tools:layout="@layout/fragment_app_time_range" />
     <fragment
         android:id="@+id/secuLogFragment"
         android:name="com.example.gomahrepoproject.main.seculog.SecuBlockFragment"

@@ -1,6 +1,7 @@
 package com.example.gomahrepoproject.main.blockapps
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
@@ -55,6 +56,7 @@ class BlockAppsFragment : Fragment() {
                             } else if (userRole == "child") {
                                 AppUploader.uploadInstalledAppsToFirebase(requireContext())
                                 checkAndPromptAccessibilityPermission()
+                                checkAndPromptOverlayPermission()
                             }
                         }
                         observeViewModel()
@@ -76,6 +78,21 @@ class BlockAppsFragment : Fragment() {
             Toast.makeText(
                 requireContext(),
                 "Please enable Accessibility Service to block apps",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun checkAndPromptOverlayPermission() {
+        if (!Settings.canDrawOverlays(requireContext())) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:${requireContext().packageName}")
+            )
+            startActivity(intent)
+            Toast.makeText(
+                requireContext(),
+                "Please grant overlay permission to block apps",
                 Toast.LENGTH_LONG
             ).show()
         }
