@@ -28,6 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
+
         android:timePickerMode="spinner" />
 
     <TimePicker
@@ -43,6 +44,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/login_btn_bg"
         android:layout_marginTop="12dp"
+        android:textColor="@color/white"
         app:backgroundTint="@null"
         android:text="Add App" />
 
@@ -56,6 +58,7 @@
     <Button
         android:id="@+id/btnStartMonitor"
         android:background="@drawable/login_btn_bg"
+        android:textColor="@color/white"
         android:layout_width="wrap_content"
         app:backgroundTint="@null"
         tools:listitem="@layout/item_app_range"
